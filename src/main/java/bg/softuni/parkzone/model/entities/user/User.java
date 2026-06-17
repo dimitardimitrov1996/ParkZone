@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.model.entities.user;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.util.UUID;
@@ -37,6 +38,7 @@ public class User {
     private UserRole role;
 
     @Column(nullable = false)
+    @Pattern(regexp = "^\\+359[0-9]{9}$", message = "Phone number must be in the format +359XXXXXXXXX")
     private String phoneNumber;
 
     @Column(nullable = false)
