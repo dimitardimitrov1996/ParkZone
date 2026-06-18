@@ -1,0 +1,146 @@
+:root {
+    --primary: #56508d;
+    --primary-dark: #2e2d5a;
+    --secondary: #746ab0;
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --text: #333;
+    --success: #2e7d32;
+    --danger: #c62828;
+}
+
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* NAVBAR */
+.navbar {
+    background: radial-gradient(circle at 90% top,
+    #746ab0 0%, #6a61a4 20%, #4c477f 50%, #2e2d5a 100%);
+    padding: 16px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    margin-left: 16px;
+}
+
+/* CONTAINER */
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 40px auto;
+}
+
+/* CARD */
+.card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+/* FORM */
+.form-group {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+input {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(86,80,141,0.15);
+}
+
+/* BUTTON */
+.btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: var(--primary-dark);
+}
+
+/* ERROR */
+.error {
+    color: var(--danger);
+    font-size: 12px;
+}
+
+/* HERO */
+.hero {
+    text-align: center;
+    padding: 40px;
+}
+
+/* GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 30px;
+}
+
+/* PARKING CARD */
+.parking-card {
+    overflow: hidden;
+    padding: 0;
+}
+
+.parking-card img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}
+
+.parking-card h2 {
+    margin: 16px;
+}
+
+.parking-card p {
+    margin: 0 16px 10px 16px;
+    color: #555;
+}
+
+.parking-card ul {
+    margin: 0 16px 20px 32px;
+    color: #666;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
