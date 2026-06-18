@@ -1,7 +1,6 @@
 package bg.softuni.parkzone.model.dto.parkinglot;
 
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
-import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 

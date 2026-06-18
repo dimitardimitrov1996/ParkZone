@@ -11,7 +11,7 @@ import lombok.Data;
 public class UserRegisterRequest {
 
     @NotBlank(message = "Username is required")
-    @Size(min = 6, message = "Username must be at least 6 characters")
+    @Size(min = 6, max = 20, message = "Username must be at least 6 characters")
     private String username;
 
     @NotBlank(message = "Email is required")
