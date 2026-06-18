@@ -144,3 +144,21 @@ input:focus {
     }
 }
 
+.hero-card {
+    text-align: center;
+    padding: 40px;
+    background: linear-gradient(135deg, #56508d, #746ab0);
+    color: white;
+    border-radius: 14px;
+}
+
+.hero-card h2 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.hero-card p {
+    opacity: 0.9;
+    font-size: 16px;
+}
+

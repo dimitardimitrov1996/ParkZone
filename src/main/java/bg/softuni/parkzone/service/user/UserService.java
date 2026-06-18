@@ -1,12 +1,17 @@
 package bg.softuni.parkzone.service.user;
 
 import bg.softuni.parkzone.model.dto.user.UserDto;
+import bg.softuni.parkzone.model.dto.user.UserLoginRequest;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequest;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import bg.softuni.parkzone.repository.user.UserRepository;
+import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -22,8 +27,8 @@ public class UserService {
 
     public UserDto register(UserRegisterRequest userRegisterRequest) {
 
-        userRepository.findByUsername(userRegisterRequest.getUsername()).ifPresent(user -> {
-            throw new RuntimeException("Username with this username already exists");
+        userRepository.findByEmail(userRegisterRequest.getEmail()).ifPresent(user -> {
+            throw new RuntimeException("Account with this email already exists");
         });
 
         User user = User.builder()
@@ -45,6 +50,44 @@ public class UserService {
                 .role(UserRole.USER)
                 .phoneNumber(user.getPhoneNumber())
                 .isActive(true)
+                .build();
+    }
+
+    public UserDto login(@Valid UserLoginRequest userLoginRequest) {
+
+        Optional<User> existingUser = userRepository.findByEmail(userLoginRequest.getEmail());
+
+        if(existingUser.isEmpty() ||
+                !passwordEncoder.matches(userLoginRequest.getPassword(), existingUser.get().getPassword())) {
+            throw new RuntimeException("Invalid credentials, please try again");
+        }
+
+        User user = existingUser.get();
+
+        return UserDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .phoneNumber(user.getPhoneNumber())
+                .isActive(user.isActive())
+                .build();
+    }
+
+    public UserDto findById(UUID userId) {
+        User user = userRepository.findById(userId).orElseThrow(()
+                -> new RuntimeException("User not found"));
+        return UserDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .phoneNumber(user.getPhoneNumber())
+                .isActive(user.isActive())
                 .build();
     }
 }
