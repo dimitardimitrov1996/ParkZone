@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -31,19 +32,19 @@ public class IndexController {
     }
 
     @GetMapping("/login")
-    public ModelAndView getLoginPage() {
-        UserLoginRequest userLoginRequest = UserLoginRequest.builder().build();
-        ModelAndView modelAndView = new ModelAndView();
-        modelAndView.setViewName("login");
-        modelAndView.addObject("userLoginRequest", userLoginRequest);
+    public ModelAndView getLoginPage(Model model) {
 
-        return modelAndView;
+        model.addAttribute("userLoginRequest", UserLoginRequest.builder().build());
+
+        return new ModelAndView("login");
     }
 
     @PostMapping("/login")
     public ModelAndView  login(@ModelAttribute("userLoginRequest")
                                    @Valid UserLoginRequest userLoginRequest,
-                               BindingResult bindingResult, HttpSession httpSession, HttpServletResponse httpServletResponse) {
+                               BindingResult bindingResult, HttpSession httpSession,
+                               HttpServletResponse response) {
+
 
         if (bindingResult.hasErrors()) {
             ModelAndView modelAndView = new ModelAndView();
@@ -59,30 +60,25 @@ public class IndexController {
 
 
     @GetMapping("/register")
-    public ModelAndView getRegisterPage() {
+    public ModelAndView getRegisterPage(Model model) {
 
-        UserRegisterRequest userRegisterRequest = UserRegisterRequest.builder().build();
+        model.addAttribute("userRegisterRequest", UserRegisterRequest.builder().build());
 
-        ModelAndView modelAndView = new ModelAndView();
-        modelAndView.setViewName("register");
-        modelAndView.addObject("userRegisterRequest", userRegisterRequest);
-
-        return modelAndView;
+        return new ModelAndView("register");
     }
 
     @PostMapping("/register")
-    public ModelAndView register(@ModelAttribute("userRegisterRequest") @Valid UserRegisterRequest userRegisterRequest,
+    public ModelAndView register(@ModelAttribute("userRegisterRequest")
+                                     @Valid UserRegisterRequest userRegisterRequest,
                                  BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-            ModelAndView modelAndView = new ModelAndView();
-            modelAndView.setViewName("register");
-            return  modelAndView;
+            return  new ModelAndView("register");
         }
 
         userService.register(userRegisterRequest);
 
-        return new  ModelAndView("redirect:/login");
+        return new ModelAndView("redirect:/login");
     }
 
 

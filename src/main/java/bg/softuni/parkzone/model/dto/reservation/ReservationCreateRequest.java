@@ -27,5 +27,9 @@ public class ReservationCreateRequest {
     @Future(message = "Start date must be in the future")
     private LocalDateTime startDate;
 
+    @NotNull(message = "End date is required")
+    @Future(message = "End date must be in the future")
+    private LocalDateTime endDate;
+
 
 }

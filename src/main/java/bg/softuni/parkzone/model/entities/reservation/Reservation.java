@@ -39,9 +39,11 @@ public class Reservation {
     private LocalDateTime endDate;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private ReservationType reservationType;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 
     @Column(nullable = false)

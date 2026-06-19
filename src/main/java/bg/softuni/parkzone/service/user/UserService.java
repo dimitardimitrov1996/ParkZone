@@ -6,6 +6,7 @@ import bg.softuni.parkzone.model.dto.user.UserRegisterRequest;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import bg.softuni.parkzone.repository.user.UserRepository;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,9 +28,15 @@ public class UserService {
 
     public UserDto register(UserRegisterRequest userRegisterRequest) {
 
+
+        userRepository.findByUsername(userRegisterRequest.getUsername()).ifPresent(user -> {
+                throw new RuntimeException("Account with this username already exists");
+        });
+
         userRepository.findByEmail(userRegisterRequest.getEmail()).ifPresent(user -> {
             throw new RuntimeException("Account with this email already exists");
         });
+
 
         User user = User.builder()
                 .username(userRegisterRequest.getUsername())
