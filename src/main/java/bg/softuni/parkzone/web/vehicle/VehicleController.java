@@ -47,20 +47,16 @@ public class VehicleController {
     }
 
     @GetMapping("/create")
-    public ModelAndView GetCreateVehiclePage(VehicleCreateRequestDTO vehicleCreateRequestDTO,
-                                             BindingResult bindingResult,
-                                             HttpSession session) {
+    public ModelAndView getCreateVehiclePage(HttpSession session) {
 
         UserDto user = userService.findById((UUID) session.getAttribute("user_id"));
 
-       if  (bindingResult.hasErrors()) {
-            ModelAndView modelAndView = new ModelAndView("vehicles/create");
-            modelAndView.addObject("vehicleCreateRequest", vehicleCreateRequestDTO);
-            modelAndView.addObject("user", user);
-            return modelAndView;
-        } else {
-           return new ModelAndView("redirect:/vehicles");
-       }
+        ModelAndView modelAndView = new ModelAndView("vehicles/create");
+
+        modelAndView.addObject("user", user);
+        modelAndView.addObject("vehicleCreateRequestDTO", VehicleCreateRequestDTO.builder().build());
+
+        return modelAndView;
     }
 
     @PostMapping("/create")
