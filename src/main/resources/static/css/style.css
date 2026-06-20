@@ -162,3 +162,51 @@ input:focus {
     font-size: 16px;
 }
 
+.form-group {
+    margin-bottom: 14px;
+}
+
+.error {
+    color: #c62828;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.cancel-form {
+    margin-top: 20px;
+}
+
+.btn-secondary {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    background: #eeeeee;
+    color: #222;
+}
+
+.btn-secondary:hover {
+    background: #dddddd;
+}
+
+.btn-danger {
+    background: #c62828;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.btn-danger:hover {
+    background: #8e0000;
+}
+

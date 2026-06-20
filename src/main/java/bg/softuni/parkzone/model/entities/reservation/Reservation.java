@@ -33,6 +33,12 @@ public class Reservation {
     private ParkingLot parkingLot;
 
     @Column(nullable = false)
+    private boolean disabledParkingSpotRequired;
+
+    @Column(nullable = false)
+    private boolean electricChargingRequired;
+
+    @Column(nullable = false)
     private LocalDateTime startDate;
 
     @Column(nullable = false)

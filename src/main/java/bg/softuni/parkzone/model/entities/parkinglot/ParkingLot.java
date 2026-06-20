@@ -19,14 +19,21 @@ public class ParkingLot {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column(nullable = false)
-    private ParkingType type;
+    @Enumerated(EnumType.STRING)
+    private ParkingType parkingType;
 
     @Column(nullable = false)
-    private Integer capacity;
+    private int capacity;
+
+    @Column(nullable = false)
+    private int disabledParkingSpots;
+
+    @Column(nullable = false)
+    private int electricChargingSpots;
 
     @Column(nullable = false)
     private BigDecimal dailyPrice;
