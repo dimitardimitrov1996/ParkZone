@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class ReservationDto {
+public class ReservationDTO {
 
     private UUID id;
     private User user;

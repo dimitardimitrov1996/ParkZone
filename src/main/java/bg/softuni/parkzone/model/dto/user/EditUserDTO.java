@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class EditUserDto {
+public class EditUserDTO {
 
     @Size(min = 2, max = 20, message = "First name must be between 2 and 20 characters")
     @Pattern(regexp = "^[a-zA-Z]+$", message = "Must contain only letters")

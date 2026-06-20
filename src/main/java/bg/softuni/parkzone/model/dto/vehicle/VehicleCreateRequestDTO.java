@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class VehicleCreateRequest {
+public class VehicleCreateRequestDTO {
 
     @NotBlank(message = "Registration number is required")
     @Pattern(regexp = "^[A-Z]{2}\\d{4}[A-Z]{2}$", message = "Registration number must be in the format: AA1234BB")
@@ -23,7 +23,7 @@ public class VehicleCreateRequest {
     private String brand;
 
     @NotBlank(message = "Model is required")
-    @Pattern(regexp = "^[a-zA-Z\\s]+$", message = "Model must contain only letters")
+    @Pattern(regexp = "^[a-zA-Z0-9\\s]+$", message = "Model must contain only letters and numbers")
     private String model;
 
     @NotNull(message = "Vehicle type is required")

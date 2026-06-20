@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class VehicleDto {
+public class VehicleDTO {
 
     private UUID id;
     private String registrationNumber;

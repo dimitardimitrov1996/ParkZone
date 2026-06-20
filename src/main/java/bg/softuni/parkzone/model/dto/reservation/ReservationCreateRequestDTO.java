@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class ReservationCreateRequest {
+public class ReservationCreateRequestDTO {
 
     @NotNull(message = "Please select a vehicle")
     private UUID vehicleId;

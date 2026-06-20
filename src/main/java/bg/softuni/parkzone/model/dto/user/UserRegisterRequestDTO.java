@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Builder
 @Data
-public class UserRegisterRequest {
+public class UserRegisterRequestDTO {
 
     @NotBlank(message = "Username is required")
     @Size(min = 6, max = 20, message = "Username must be at least 6 characters")

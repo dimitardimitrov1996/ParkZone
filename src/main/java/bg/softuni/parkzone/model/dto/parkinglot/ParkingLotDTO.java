@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class ParkingLotDto {
+public class ParkingLotDTO {
 
     private UUID id;
     private String name;
