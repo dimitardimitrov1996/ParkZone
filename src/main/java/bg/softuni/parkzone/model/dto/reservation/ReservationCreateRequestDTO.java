@@ -20,6 +20,10 @@ public class ReservationCreateRequestDTO {
     @NotNull(message = "Please select a parking lot")
     private UUID parkingLotId;
 
+    private boolean disabledParkingSpotRequired;
+
+    private boolean electricChargingRequired;
+
     @NotNull(message = "Please select reservation type")
     private ReservationType reservationType;
 

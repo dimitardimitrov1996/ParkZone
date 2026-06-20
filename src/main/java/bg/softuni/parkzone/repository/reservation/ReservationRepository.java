@@ -14,4 +14,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
     List<Reservation> findAllByUser(User user);
 
 
+    List<Reservation> findAllByUserId(UUID userId);
 }

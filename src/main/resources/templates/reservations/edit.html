@@ -2,9 +2,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Make Reservation</title>
+    <title>Edit Reservation</title>
     <link rel="stylesheet" href="/css/style.css">
-
 </head>
 <body>
 
@@ -21,13 +20,13 @@
 <div class="container">
 
     <div class="card">
-        <h2>Make a Reservation</h2>
+        <h2>Edit Reservation</h2>
 
-        <form th:action="@{/reservations/create}"
+        <form th:action="@{/reservations/edit/{id}(id=${reservationId})}"
               th:object="${reservationCreateRequestDTO}"
               method="post">
 
-
+            <input type="hidden" name="_method" value="PUT">
 
             <div class="form-group">
                 <label for="vehicleId">Vehicle</label>
@@ -62,31 +61,6 @@
                 <div class="error"
                      th:if="${#fields.hasErrors('parkingLotId')}"
                      th:errors="*{parkingLotId}">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" th:field="*{disabledParkingSpotRequired}">
-                    I need a disabled parking spot
-                </label>
-
-                <div class="error"
-                     th:if="${#fields.hasErrors('disabledParkingSpotRequired')}"
-                     th:errors="*{disabledParkingSpotRequired}">
-                </div>
-
-            </div>
-
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" th:field="*{electricChargingRequired}">
-                    I need an electric vehicle charging spot
-                </label>
-
-                <div class="error"
-                     th:if="${#fields.hasErrors('electricChargingRequired')}"
-                     th:errors="*{electricChargingRequired}">
                 </div>
             </div>
 
@@ -136,8 +110,21 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn">
-                Save Reservation
+            <div class="form-actions">
+                <button type="submit" class="btn">Save Changes</button>
+                <a href="/reservations" class="btn-secondary">Back</a>
+            </div>
+
+        </form>
+
+        <form th:action="@{/reservations/cancel/{id}(id=${reservationId})}"
+              method="post"
+              class="cancel-form">
+
+            <button type="submit"
+                    class="btn-danger"
+                    onclick="return confirm('Are you sure you want to cancel this reservation?')">
+                Cancel Reservation
             </button>
 
         </form>

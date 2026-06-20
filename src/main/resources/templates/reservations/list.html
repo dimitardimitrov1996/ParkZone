@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Reservations</title>
+    <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        .status-active {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-completed {
+            color: #555;
+            font-weight: bold;
+        }
+
+        .status-cancelled {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        .action-form {
+            display: inline;
+        }
+
+        .link-button {
+            background: none;
+            border: none;
+            color: #551A8B;
+            text-decoration: underline;
+            cursor: pointer;
+            font: inherit;
+            padding: 0;
+            margin-left: 10px;
+        }
+
+        .empty-box {
+            padding: 20px;
+            background: #f8f8f8;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone</strong></div>
+    <div>
+        <a href="/home">Home</a>
+        <a href="/reservations/create">Make a reservation</a>
+        <a href="/reservations">History</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Your Reservations</h2>
+
+        <div th:if="${#lists.isEmpty(reservations)}" class="empty-box">
+            <p>You have no current reservations.</p>
+            <a href="/reservations/create" class="btn">Make a reservation</a>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(reservations)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Vehicle</th>
+                    <th>Parking Lot</th>
+                    <th>Type</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                    <th>Total Price</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="r : ${reservations}">
+
+                    <td th:text="${r.vehicle.registrationNumber}">CB1234AB</td>
+
+                    <td th:text="${r.parkingLot.name}">Indoor Parking</td>
+
+                    <td th:text="${r.reservationType}">DAILY</td>
+
+                    <td th:text="${#temporals.format(r.startDate, 'dd.MM.yyyy HH:mm')}">
+                        20.06.2026 10:00
+                    </td>
+
+                    <td th:text="${#temporals.format(r.endDate, 'dd.MM.yyyy HH:mm')}">
+                        21.06.2026 10:00
+                    </td>
+
+                    <td>
+						<span th:if="${r.status.name() == 'ACTIVE'}"
+                              class="status-active">
+							ACTIVE
+						</span>
+
+                        <span th:if="${r.status.name() == 'COMPLETED'}"
+                              class="status-completed">
+							COMPLETED
+						</span>
+
+                        <span th:if="${r.status.name() == 'CANCELLED'}"
+                              class="status-cancelled">
+							CANCELLED
+						</span>
+                    </td>
+
+                    <td th:text="${r.totalPrice + ' EUR'}"></td>
+
+                    <td>
+
+                        <a th:if="${r.status.name() == 'ACTIVE'}"
+                           th:href="@{/reservations/edit/{id}(id=${r.id})}">
+                            Edit
+                        </a>
+
+                        <form th:if="${r.status.name() == 'ACTIVE'}"
+                              th:action="@{/reservations/cancel/{id}(id=${r.id})}"
+                              method="post"
+                              class="action-form">
+
+                            <button type="submit"
+                                    class="link-button"
+                                    onclick="return confirm('Are you sure you want to cancel this reservation?')">
+                                Cancel
+                            </button>
+
+                        </form>
+                    </td>
+
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
