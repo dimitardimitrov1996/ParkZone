@@ -1,8 +1,8 @@
 package bg.softuni.parkzone.web;
 
 import bg.softuni.parkzone.model.dto.user.UserDto;
-import bg.softuni.parkzone.model.dto.user.UserLoginRequest;
-import bg.softuni.parkzone.model.dto.user.UserRegisterRequest;
+import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
+import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
 import bg.softuni.parkzone.service.user.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -34,14 +34,14 @@ public class IndexController {
     @GetMapping("/login")
     public ModelAndView getLoginPage(Model model) {
 
-        model.addAttribute("userLoginRequest", UserLoginRequest.builder().build());
+        model.addAttribute("userLoginRequestDTO", UserLoginRequestDTO.builder().build());
 
         return new ModelAndView("login");
     }
 
     @PostMapping("/login")
     public ModelAndView  login(@ModelAttribute("userLoginRequest")
-                                   @Valid UserLoginRequest userLoginRequest,
+                                   @Valid UserLoginRequestDTO userLoginRequestDTO,
                                BindingResult bindingResult, HttpSession httpSession,
                                HttpServletResponse response) {
 
@@ -52,7 +52,7 @@ public class IndexController {
             return modelAndView;
         }
 
-        UserDto user = userService.login(userLoginRequest);
+        UserDto user = userService.login(userLoginRequestDTO);
         httpSession.setAttribute("user_id", user.getId());
 
         return new ModelAndView("redirect:/home");
@@ -62,21 +62,21 @@ public class IndexController {
     @GetMapping("/register")
     public ModelAndView getRegisterPage(Model model) {
 
-        model.addAttribute("userRegisterRequest", UserRegisterRequest.builder().build());
+        model.addAttribute("userRegisterRequestDTO", UserRegisterRequestDTO.builder().build());
 
         return new ModelAndView("register");
     }
 
     @PostMapping("/register")
     public ModelAndView register(@ModelAttribute("userRegisterRequest")
-                                     @Valid UserRegisterRequest userRegisterRequest,
+                                     @Valid UserRegisterRequestDTO userRegisterRequestDTO,
                                  BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             return  new ModelAndView("register");
         }
 
-        userService.register(userRegisterRequest);
+        userService.register(userRegisterRequestDTO);
 
         return new ModelAndView("redirect:/login");
     }

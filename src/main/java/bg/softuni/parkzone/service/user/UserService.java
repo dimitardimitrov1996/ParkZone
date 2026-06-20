@@ -1,12 +1,11 @@
 package bg.softuni.parkzone.service.user;
 
 import bg.softuni.parkzone.model.dto.user.UserDto;
-import bg.softuni.parkzone.model.dto.user.UserLoginRequest;
-import bg.softuni.parkzone.model.dto.user.UserRegisterRequest;
+import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
+import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import bg.softuni.parkzone.repository.user.UserRepository;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,22 +25,22 @@ public class UserService {
     }
 
 
-    public UserDto register(UserRegisterRequest userRegisterRequest) {
+    public UserDto register(UserRegisterRequestDTO userRegisterRequestDTO) {
 
 
-        userRepository.findByUsername(userRegisterRequest.getUsername()).ifPresent(user -> {
+        userRepository.findByUsername(userRegisterRequestDTO.getUsername()).ifPresent(user -> {
                 throw new RuntimeException("Account with this username already exists");
         });
 
-        userRepository.findByEmail(userRegisterRequest.getEmail()).ifPresent(user -> {
+        userRepository.findByEmail(userRegisterRequestDTO.getEmail()).ifPresent(user -> {
             throw new RuntimeException("Account with this email already exists");
         });
 
 
         User user = User.builder()
-                .username(userRegisterRequest.getUsername())
-                .password(passwordEncoder.encode(userRegisterRequest.getPassword()))
-                .email(userRegisterRequest.getEmail())
+                .username(userRegisterRequestDTO.getUsername())
+                .password(passwordEncoder.encode(userRegisterRequestDTO.getPassword()))
+                .email(userRegisterRequestDTO.getEmail())
                 .isActive(true)
                 .role(UserRole.USER)
                 .build();
@@ -60,12 +59,12 @@ public class UserService {
                 .build();
     }
 
-    public UserDto login(@Valid UserLoginRequest userLoginRequest) {
+    public UserDto login(@Valid UserLoginRequestDTO userLoginRequestDTO) {
 
-        Optional<User> existingUser = userRepository.findByEmail(userLoginRequest.getEmail());
+        Optional<User> existingUser = userRepository.findByEmail(userLoginRequestDTO.getEmail());
 
         if(existingUser.isEmpty() ||
-                !passwordEncoder.matches(userLoginRequest.getPassword(), existingUser.get().getPassword())) {
+                !passwordEncoder.matches(userLoginRequestDTO.getPassword(), existingUser.get().getPassword())) {
             throw new RuntimeException("Invalid credentials, please try again");
         }
 

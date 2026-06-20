@@ -1,7 +1,7 @@
 package bg.softuni.parkzone.service.vehicle;
 
-import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequest;
-import bg.softuni.parkzone.model.dto.vehicle.VehicleDto;
+import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
+import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import bg.softuni.parkzone.repository.user.UserRepository;
@@ -23,10 +23,10 @@ public class VehicleService {
         this.userRepository = userRepository;
     }
 
-    public void createVehicle(@Valid VehicleCreateRequest vehicleCreateRequest, UUID id) {
+    public void createVehicle(@Valid VehicleCreateRequestDTO vehicleCreateRequestDTO, UUID id) {
 
         if (vehicleRepository.existsByRegistrationNumber(
-                vehicleCreateRequest.getRegistrationNumber())) {
+                vehicleCreateRequestDTO.getRegistrationNumber())) {
 
             throw new IllegalArgumentException(
                     "Vehicle with this registration number already exists");
@@ -36,12 +36,12 @@ public class VehicleService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         Vehicle vehicle = Vehicle.builder()
-                .registrationNumber(vehicleCreateRequest.getRegistrationNumber())
-                .brand(vehicleCreateRequest.getBrand())
-                .model(vehicleCreateRequest.getModel())
-                .vehicleType(vehicleCreateRequest.getVehicleType())
-                .engineType(vehicleCreateRequest.getEngineType())
-                .disabledParkingRequired(vehicleCreateRequest.isDisabledParkingRequired())
+                .registrationNumber(vehicleCreateRequestDTO.getRegistrationNumber())
+                .brand(vehicleCreateRequestDTO.getBrand())
+                .model(vehicleCreateRequestDTO.getModel())
+                .vehicleType(vehicleCreateRequestDTO.getVehicleType())
+                .engineType(vehicleCreateRequestDTO.getEngineType())
+                .disabledParkingRequired(vehicleCreateRequestDTO.isDisabledParkingRequired())
                 .owner(owner)
                 .build();
 
@@ -51,5 +51,50 @@ public class VehicleService {
 
     public List<Vehicle> getVehiclesByOwner(UUID ownerId) {
         return vehicleRepository.findAllByOwnerId(ownerId);
+    }
+
+    public Vehicle findById(UUID id) {
+        return vehicleRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+    }
+
+    public void editVehicle(VehicleEditDTO request, UUID id) {
+
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+
+        vehicle.setRegistrationNumber(request.getRegistrationNumber());
+        vehicle.setBrand(request.getBrand());
+        vehicle.setModel(request.getModel());
+        vehicle.setVehicleType(request.getVehicleType());
+        vehicle.setEngineType(request.getEngineType());
+        vehicle.setDisabledParkingRequired(request.isDisabledParkingRequired());
+
+        vehicleRepository.save(vehicle);
+
+    }
+
+
+    public VehicleEditDTO getVehicleForEdit(UUID id) {
+
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+
+        return VehicleEditDTO.builder()
+                .registrationNumber(vehicle.getRegistrationNumber())
+                .brand(vehicle.getBrand())
+                .model(vehicle.getModel())
+                .vehicleType(vehicle.getVehicleType())
+                .engineType(vehicle.getEngineType())
+                .disabledParkingRequired(vehicle.isDisabledParkingRequired())
+                .build();
+    }
+
+    public void deleteVehicle(UUID id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+
+        vehicleRepository.delete(vehicle);
+
     }
 }
