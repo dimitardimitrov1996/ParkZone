@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Vehicles</title>
+	<link rel="stylesheet" href="/css/style.css">
+	<style>table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}</style>
+</head>
+<body>
+
+<div class="navbar">
+	<div><strong>ParkZone</strong></div>
+	<div>
+		<a href="/home">Home</a>
+		<a href="/vehicles/create">Add Vehicle</a>
+		<a href="/logout">Logout</a>
+	</div>
+</div>
+
+<div class="container">
+
+	<div class="card">
+		<h2>Your Vehicles</h2>
+
+		<div th:if="${#lists.isEmpty(vehicles)}">
+			<p>You have no vehicles yet. <a href="/vehicles/create">Add one</a>.</p>
+		</div>
+
+		<div th:if="${!#lists.isEmpty(vehicles)}">
+			<table>
+				<thead>
+				<tr>
+					<th>Registration</th>
+					<th>Brand</th>
+					<th>Model</th>
+					<th>Type</th>
+					<th>Engine</th>
+					<th>Disabled Req.</th>
+					<th>Owner</th>
+					<th>Actions</th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr th:each="v : ${vehicles}">
+					<td th:text="${v.registrationNumber}">ABC123</td>
+					<td th:text="${v.brand}">Toyota</td>
+					<td th:text="${v.model}">Corolla</td>
+					<td th:text="${v.vehicleType}">CAR</td>
+					<td th:text="${v.engineType}">PETROL</td>
+					<td th:text="${v.disabledParkingRequired} ? 'Yes' : 'No'">No</td>
+					<td th:text="${v.owner != null} ? ${v.owner.username} : '—'">owner</td>
+					<td>
+						<a th:href="@{'/vehicles/' + ${v.id}}">Details</a>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+
+	</div>
+
+</div>
+
+</body>
+</html>
+
+

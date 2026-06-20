@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>Vehicle Details</title>
+	<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+	<div><strong>ParkZone</strong></div>
+	<div>
+		<a href="/vehicles">Back to Vehicles</a>
+		<a href="/home">Home</a>
+		<a href="/logout">Logout</a>
+	</div>
+	</div>
+
+<div class="container">
+
+	<div class="card">
+		<h2>Vehicle Details</h2>
+
+		<div>
+			<p><strong>Registration:</strong> <span th:text="${vehicle.registrationNumber}">ABC123</span></p>
+			<p><strong>Brand:</strong> <span th:text="${vehicle.brand}">Toyota</span></p>
+			<p><strong>Model:</strong> <span th:text="${vehicle.model}">Corolla</span></p>
+			<p><strong>Type:</strong> <span th:text="${vehicle.vehicleType}">CAR</span></p>
+			<p><strong>Engine:</strong> <span th:text="${vehicle.engineType}">PETROL</span></p>
+			<p><strong>Disabled Parking Required:</strong> <span th:text="${vehicle.disabledParkingRequired} ? 'Yes' : 'No'">No</span></p>
+			<p><strong>Owner:</strong> <span th:text="${vehicle.owner != null} ? ${vehicle.owner.username} : '—'">owner</span></p>
+		</div>
+
+	</div>
+
+</div>
+
+</body>
+</html>
+
+
