@@ -42,15 +42,26 @@
 				</thead>
 				<tbody>
 				<tr th:each="v : ${vehicles}">
-					<td th:text="${v.registrationNumber}">ABC123</td>
-					<td th:text="${v.brand}">Toyota</td>
-					<td th:text="${v.model}">Corolla</td>
-					<td th:text="${v.vehicleType}">CAR</td>
-					<td th:text="${v.engineType}">PETROL</td>
-					<td th:text="${v.disabledParkingRequired} ? 'Yes' : 'No'">No</td>
-					<td th:text="${v.owner != null} ? ${v.owner.username} : '—'">owner</td>
+					<td th:text="${v.registrationNumber}"></td>
+					<td th:text="${v.brand}"></td>
+					<td th:text="${v.model}"></td>
+					<td th:text="${v.vehicleType}"></td>
+					<td th:text="${v.engineType}"></td>
+					<td th:text="${v.disabledParkingRequired} ? 'Yes' : 'No'"></td>
+					<td th:text="${v.owner != null} ? ${v.owner.username} : '—'"></td>
 					<td>
-						<a th:href="@{'/vehicles/' + ${v.id}}">Details</a>
+						<a th:href="@{'/vehicles/edit/' + ${v.id}}">Edit</a>
+						<form th:action="@{/vehicles/delete/{id}(id=${v.id})}"
+						      method="post"
+						      style="display:inline">
+
+							<button type="submit"
+							        class="link-button"
+							        onclick="return confirm('Delete this vehicle?')">
+								Delete
+							</button>
+
+						</form>
 					</td>
 				</tr>
 				</tbody>
