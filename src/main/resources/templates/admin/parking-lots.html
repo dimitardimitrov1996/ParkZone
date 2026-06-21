@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Parking Lots</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone Admin</strong></div>
+    <div>
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/parking-lots">Parking Lots</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/reservations">Reservations</a>
+        <a href="/admin/vehicles">Vehicles</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>Parking Lots</h2>
+
+        <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Capacity</th>
+                <th>Disabled Spots</th>
+                <th>Electric Spots</th>
+                <th>Daily Price</th>
+                <th>Monthly Price</th>
+                <th>Yearly Price</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="p : ${parkingLots}">
+                <td th:text="${p.name}"></td>
+                <td th:text="${p.parkingType}"></td>
+                <td th:text="${p.capacity}"></td>
+                <td th:text="${p.disabledParkingSpots}"></td>
+                <td th:text="${p.electricChargingSpots}"></td>
+                <td th:text="${p.dailyPrice + ' EUR'}"></td>
+                <td th:text="${p.monthlyPrice + ' EUR'}"></td>
+                <td th:text="${p.yearlyPrice + ' EUR'}"></td>
+                <td>
+                    <a th:href="@{/admin/parking-lots/{id}/spots(id=${p.id})}">
+                        Manage spots
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

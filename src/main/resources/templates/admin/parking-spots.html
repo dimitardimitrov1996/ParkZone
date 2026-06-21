@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Parking Spots</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone Admin</strong></div>
+    <div>
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/parking-lots">Parking Lots</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/reservations">Reservations</a>
+        <a href="/admin/vehicles">Vehicles</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2 th:text="${parkingLot.name + ' - Parking Spots'}"></h2>
+
+        <a href="/admin/parking-lots" class="btn-secondary">Back to parking lots</a>
+
+        <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Spot Number</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="s : ${parkingSpots}">
+                <td th:text="${s.spotNumber}"></td>
+
+                <td>
+                    <span th:if="${s.disabledSpot}">Disabled</span>
+                    <span th:if="${s.electricChargingSpot}">Electric charging</span>
+                    <span th:if="${!s.disabledSpot && !s.electricChargingSpot}">Normal</span>
+                </td>
+
+                <td>
+                    <span th:text="${s.active ? 'Active' : 'Inactive'}"
+                          th:class="${s.active ? 'status-active' : 'status-inactive'}">
+                    </span>
+                </td>
+
+                <td>
+                    <form th:action="@{/admin/parking-spots/{id}/make-disabled(id=${s.id})}"
+                          method="post"
+                          class="inline-form">
+                        <button type="submit" class="btn">Make Disabled</button>
+                    </form>
+
+                    <form th:action="@{/admin/parking-spots/{id}/make-electric(id=${s.id})}"
+                          method="post"
+                          class="inline-form">
+                        <button type="submit" class="btn">Make Electric</button>
+                    </form>
+
+                    <form th:action="@{/admin/parking-spots/{id}/make-normal(id=${s.id})}"
+                          method="post"
+                          class="inline-form">
+                        <button type="submit" class="btn-secondary">Make Normal</button>
+                    </form>
+
+                    <form th:action="@{/admin/parking-spots/{id}/toggle-active(id=${s.id})}"
+                          method="post"
+                          class="inline-form">
+                        <button type="submit"
+                                th:class="${s.active ? 'btn-danger' : 'btn'}"
+                                th:text="${s.active ? 'Deactivate' : 'Activate'}">
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Vehicles</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone Admin</strong></div>
+    <div>
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/parking-lots">Parking Lots</a>
+        <a href="/admin/vehicles">Vehicles</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/reservations">Reservations</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>Vehicles</h2>
+
+        <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+        <div class="success" th:if="${successMessage}" th:text="${successMessage}"></div>
+
+        <table>
+            <thead>
+            <tr>
+                <th>Owner</th>
+                <th>Registration</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>Vehicle Type</th>
+                <th>Engine Type</th>
+                <th>Disabled Parking</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="v : ${vehicles}">
+                <td th:text="${v.owner.username}"></td>
+
+                <td th:text="${v.registrationNumber}"></td>
+
+                <td th:text="${v.brand}"></td>
+
+                <td th:text="${v.model}"></td>
+
+                <td th:text="${v.vehicleType}"></td>
+
+                <td th:text="${v.engineType}"></td>
+
+                <td th:text="${v.disabledParkingRequired ? 'Yes' : 'No'}"></td>
+
+                <td>
+                    <span th:text="${v.active ? 'Active' : 'Deleted'}"
+                          th:class="${v.active ? 'status-active' : 'status-inactive'}">
+                    </span>
+                </td>
+
+                <td>
+                    <form th:if="${v.active}"
+                          th:action="@{/admin/vehicles/delete/{id}(id=${v.id})}"
+                          method="post"
+                          class="inline-form">
+
+                        <button type="submit"
+                                class="btn-danger"
+                                onclick="return confirm('Delete this vehicle? Active reservations will be cancelled.')">
+                            Delete
+                        </button>
+                    </form>
+
+                    <form th:unless="${v.active}"
+                          th:action="@{/admin/vehicles/activate/{id}(id=${v.id})}"
+                          method="post"
+                          class="inline-form">
+
+                        <button type="submit"
+                                class="btn">
+                            Activate
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+</body>
+</html>

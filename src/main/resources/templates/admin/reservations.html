@@ -12,9 +12,9 @@
     <div>
         <a href="/admin">Dashboard</a>
         <a href="/admin/parking-lots">Parking Lots</a>
-        <a href="/admin/vehicles">Vehicles</a>
         <a href="/admin/users">Users</a>
         <a href="/admin/reservations">Reservations</a>
+        <a href="/admin/vehicles">Vehicles</a>
         <a href="/logout">Logout</a>
     </div>
 </div>
@@ -37,6 +37,7 @@
                     <th>User</th>
                     <th>Vehicle</th>
                     <th>Parking Lot</th>
+                    <th>Parking Spot</th>
                     <th>Type</th>
                     <th>Start</th>
                     <th>End</th>
@@ -56,6 +57,8 @@
                     </td>
 
                     <td th:text="${r.parkingLot.name}"></td>
+
+                    <td th:text="${r.parkingSpot.spotNumber}"></td>
 
                     <td th:text="${r.reservationType}"></td>
 
