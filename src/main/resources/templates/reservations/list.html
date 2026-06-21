@@ -62,7 +62,6 @@
     <div>
         <a href="/home">Home</a>
         <a href="/reservations/create">Make a reservation</a>
-        <a href="/reservations">History</a>
         <a href="/logout">Logout</a>
     </div>
 </div>
@@ -71,6 +70,16 @@
 
     <div class="card">
         <h2>Your Reservations</h2>
+
+        <div class="success"
+             th:if="${successMessage}"
+             th:text="${successMessage}">
+        </div>
+
+        <div class="error"
+             th:if="${errorMessage}"
+             th:text="${errorMessage}">
+        </div>
 
         <div th:if="${#lists.isEmpty(reservations)}" class="empty-box">
             <p>You have no current reservations.</p>
@@ -83,6 +92,7 @@
                 <tr>
                     <th>Vehicle</th>
                     <th>Parking Lot</th>
+                    <th>Parking Spot</th>
                     <th>Type</th>
                     <th>Start</th>
                     <th>End</th>
@@ -95,18 +105,18 @@
                 <tbody>
                 <tr th:each="r : ${reservations}">
 
-                    <td th:text="${r.vehicle.registrationNumber}">CB1234AB</td>
+                    <td th:text="${r.vehicle.registrationNumber}"></td>
 
-                    <td th:text="${r.parkingLot.name}">Indoor Parking</td>
+                    <td th:text="${r.parkingLot.name}"></td>
 
-                    <td th:text="${r.reservationType}">DAILY</td>
+                    <td th:text="${r.parkingSpot.spotNumber}"></td>
+
+                    <td th:text="${r.reservationType}"></td>
 
                     <td th:text="${#temporals.format(r.startDate, 'dd.MM.yyyy HH:mm')}">
-                        20.06.2026 10:00
                     </td>
 
                     <td th:text="${#temporals.format(r.endDate, 'dd.MM.yyyy HH:mm')}">
-                        21.06.2026 10:00
                     </td>
 
                     <td>
@@ -147,6 +157,8 @@
                             </button>
 
                         </form>
+
+                        <span th:unless="${r.status.name() == 'ACTIVE'}">—</span>
                     </td>
 
                 </tr>
