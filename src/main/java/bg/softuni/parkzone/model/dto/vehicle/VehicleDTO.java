@@ -20,5 +20,6 @@ public class VehicleDTO {
     private EngineType engineType;
     private boolean disabledParkingRequired;
     private User owner;
+    private boolean isActive;
 
 }

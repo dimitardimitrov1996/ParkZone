@@ -2,8 +2,11 @@ package bg.softuni.parkzone.service.vehicle;
 
 import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
+import bg.softuni.parkzone.model.entities.reservation.Reservation;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
 import jakarta.validation.Valid;
@@ -17,10 +20,12 @@ public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
 
-    public VehicleService(VehicleRepository vehicleRepository, UserRepository userRepository) {
+    public VehicleService(VehicleRepository vehicleRepository, UserRepository userRepository, ReservationRepository reservationRepository) {
         this.vehicleRepository = vehicleRepository;
         this.userRepository = userRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     public void createVehicle(@Valid VehicleCreateRequestDTO vehicleCreateRequestDTO, UUID id) {
@@ -43,6 +48,7 @@ public class VehicleService {
                 .engineType(vehicleCreateRequestDTO.getEngineType())
                 .disabledParkingRequired(vehicleCreateRequestDTO.isDisabledParkingRequired())
                 .owner(owner)
+                .active(true)
                 .build();
 
         vehicleRepository.save(vehicle);
@@ -50,7 +56,7 @@ public class VehicleService {
     }
 
     public List<Vehicle> getVehiclesByOwner(UUID ownerId) {
-        return vehicleRepository.findAllByOwnerId(ownerId);
+        return vehicleRepository.findAllByOwnerIdAndActiveTrue(ownerId);
     }
 
     public Vehicle findById(UUID id) {
@@ -94,7 +100,48 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
 
-        vehicleRepository.delete(vehicle);
+        vehicle.setActive(false);
+        vehicleRepository.save(vehicle);
 
     }
+
+    public List<Vehicle> getAllVehicles() {
+        return vehicleRepository.findAllByOrderByRegistrationNumberAsc();
+    }
+
+    public void deleteVehicleByAdmin(UUID vehicleId) {
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+
+        if (!vehicle.isActive()) {
+            throw new IllegalArgumentException("Vehicle is already deleted");
+        }
+
+        List<Reservation> activeReservations = reservationRepository
+                .findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE);
+
+        for (Reservation reservation : activeReservations) {
+            reservation.setStatus(ReservationStatus.CANCELLED);
+        }
+
+        reservationRepository.saveAll(activeReservations);
+
+        vehicle.setActive(false);
+        vehicleRepository.save(vehicle);
+    }
+
+    public void activateVehicleByAdmin(UUID vehicleId) {
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+
+        if (vehicle.isActive()) {
+            throw new IllegalArgumentException("Vehicle is already active");
+        }
+
+        vehicle.setActive(true);
+        vehicleRepository.save(vehicle);
+    }
+
 }

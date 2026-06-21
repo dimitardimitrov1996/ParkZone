@@ -42,6 +42,9 @@ public class Vehicle {
     @ManyToOne
     private User owner;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
 
 
 }

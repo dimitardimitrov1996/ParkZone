@@ -10,8 +10,10 @@ import java.util.UUID;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
+
     boolean existsByRegistrationNumber(String registrationNumber);
 
+    List<Vehicle> findAllByOwnerIdAndActiveTrue(UUID ownerId);
 
-    List<Vehicle> findAllByOwnerId(UUID ownerId);
+    List<Vehicle> findAllByOrderByRegistrationNumberAsc();
 }
