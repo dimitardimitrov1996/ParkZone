@@ -88,12 +88,6 @@ input:focus {
     background: var(--primary-dark);
 }
 
-/* ERROR */
-.error {
-    color: var(--danger);
-    font-size: 12px;
-}
-
 /* HERO */
 .hero {
     text-align: center;
@@ -162,10 +156,7 @@ input:focus {
     font-size: 16px;
 }
 
-.form-group {
-    margin-bottom: 14px;
-}
-
+/* ERROR */
 .error {
     color: #c62828;
     font-size: 12px;
@@ -210,3 +201,50 @@ input:focus {
     background: #8e0000;
 }
 
+/* TABLES */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 18px;
+    background: white;
+}
+
+th, td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e5e5e5;
+    text-align: left;
+    font-size: 14px;
+}
+
+th {
+    color: var(--primary-dark);
+    font-weight: 700;
+    background: #f3f2fb;
+}
+
+tr:hover {
+    background: #fafafa;
+}
+
+.status-active {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.status-inactive {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.status-completed {
+    color: #555;
+    font-weight: 700;
+}
+
+.inline-form {
+    display: inline;
+}

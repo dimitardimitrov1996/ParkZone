@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Reservations</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone Admin</strong></div>
+    <div>
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/parking-lots">Parking Lots</a>
+        <a href="/admin/vehicles">Vehicles</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/reservations">Reservations</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Reservations</h2>
+
+        <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+        <div th:if="${#lists.isEmpty(reservations)}">
+            <p>No reservations found.</p>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(reservations)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Vehicle</th>
+                    <th>Parking Lot</th>
+                    <th>Type</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                    <th>Total Price</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="r : ${reservations}">
+
+                    <td th:text="${r.user.username}"></td>
+
+                    <td th:text="${r.vehicle.registrationNumber + ' - ' + r.vehicle.brand + ' ' + r.vehicle.model}">
+
+                    </td>
+
+                    <td th:text="${r.parkingLot.name}"></td>
+
+                    <td th:text="${r.reservationType}"></td>
+
+                    <td th:text="${#temporals.format(r.startDate, 'dd.MM.yyyy HH:mm')}">
+
+                    </td>
+
+                    <td th:text="${#temporals.format(r.endDate, 'dd.MM.yyyy HH:mm')}">
+
+                    </td>
+
+                    <td>
+                        <span th:text="${r.status}"
+                              th:class="${r.status.name() == 'ACTIVE' ? 'status-active' :
+                                        (r.status.name() == 'CANCELLED' ? 'status-inactive' : 'status-completed')}">
+                        </span>
+                    </td>
+
+                    <td th:text="${r.totalPrice + ' EUR'}"></td>
+
+                    <td>
+                        <form th:if="${r.status.name() == 'ACTIVE'}"
+                              th:action="@{/admin/reservations/cancel/{id}(id=${r.id})}"
+                              method="post"
+                              class="inline-form">
+
+                            <button type="submit"
+                                    class="btn-danger"
+                                    onclick="return confirm('Are you sure you want to cancel this reservation?')">
+                                Cancel
+                            </button>
+
+                        </form>
+
+                        <span th:if="${r.status.name() != 'ACTIVE'}">—</span>
+                    </td>
+
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

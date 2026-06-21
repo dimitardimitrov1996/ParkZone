@@ -2,12 +2,16 @@ package bg.softuni.parkzone.service.reservation;
 
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
+import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
+import bg.softuni.parkzone.model.entities.parkingsport.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.EngineType;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.model.entities.vehicle.VehicleType;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
+import bg.softuni.parkzone.repository.parkingspot.ParkingSpotRepository;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
@@ -26,12 +30,14 @@ public class ReservationService {
     private final UserRepository userRepository;
     private final VehicleRepository vehicleRepository;
     private final ParkingLotRepository parkingLotRepository;
+    private final ParkingSpotRepository parkingSpotRepository;
 
-    public ReservationService(ReservationRepository reservationRepository, UserRepository userRepository, VehicleRepository vehicleRepository, ParkingLotRepository parkingLotRepository) {
+    public ReservationService(ReservationRepository reservationRepository, UserRepository userRepository, VehicleRepository vehicleRepository, ParkingLotRepository parkingLotRepository, ParkingSpotRepository parkingSpotRepository) {
         this.reservationRepository = reservationRepository;
         this.userRepository = userRepository;
         this.vehicleRepository = vehicleRepository;
         this.parkingLotRepository = parkingLotRepository;
+        this.parkingSpotRepository = parkingSpotRepository;
     }
 
 
@@ -50,37 +56,74 @@ public class ReservationService {
         ParkingLot parkingLot = parkingLotRepository.findById(dto.getParkingLotId())
                 .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
 
+        ParkingSpot parkingSpot = parkingSpotRepository.findById(dto.getParkingSpotId())
+                .orElseThrow(() -> new IllegalArgumentException("Parking spot not found"));
+
+        if (!parkingSpot.isActive()) {
+            throw new IllegalArgumentException("This parking spot is not active");
+        }
+
         if (!vehicle.getOwner().getId().equals(userId)) {
             throw new IllegalArgumentException("You cannot make a reservation with this vehicle");
         }
 
+        if (vehicle.getVehicleType() == VehicleType.VAN
+                && parkingLot.getParkingType() == ParkingType.INDOOR) {
+            throw new IllegalArgumentException("Vans cannot reserve spots in the indoor parking lot");
+        }
+
         validateReservationPeriod(dto);
 
-        if (dto.isDisabledParkingSpotRequired() && !vehicle.isDisabledParkingRequired()) {
-            throw new IllegalArgumentException("This vehicle is not marked as requiring a disabled parking spot");
+        if (!parkingSpot.getParkingLot().getId().equals(parkingLot.getId())) {
+            throw new IllegalArgumentException("Selected parking spot does not belong to the selected parking lot");
         }
 
-        if (dto.isElectricChargingRequired() && vehicle.getEngineType() != EngineType.ELECTRIC) {
-            throw new IllegalArgumentException("Only electric vehicles can reserve an electric charging spot");
+        boolean parkingSpotIsTaken =
+                reservationRepository.existsByParkingSpotIdAndStatusAndStartDateBeforeAndEndDateAfter(
+                        parkingSpot.getId(),
+                        ReservationStatus.ACTIVE,
+                        dto.getEndDate(),
+                        dto.getStartDate()
+                );
+
+        if (parkingSpotIsTaken) {
+            throw new IllegalArgumentException("This parking spot is already reserved for the selected period");
         }
 
-        if (dto.isElectricChargingRequired() && parkingLot.getElectricChargingSpots() <= 0) {
-            throw new IllegalArgumentException("This parking lot does not have electric charging spots");
+        boolean vehicleAlreadyReserved =
+                reservationRepository.existsByVehicleIdAndStatusAndStartDateBeforeAndEndDateAfter(
+                        vehicle.getId(),
+                        ReservationStatus.ACTIVE,
+                        dto.getEndDate(),
+                        dto.getStartDate()
+                );
+
+        if (vehicleAlreadyReserved) {
+            throw new IllegalArgumentException("This vehicle already has an active reservation for the selected period");
         }
 
-        if (dto.isDisabledParkingSpotRequired() && parkingLot.getDisabledParkingSpots() <= 0) {
-            throw new IllegalArgumentException("This parking lot does not have disabled parking spots");
+        if (!parkingSpot.getParkingLot().getId().equals(parkingLot.getId())) {
+            throw new IllegalArgumentException("Selected parking spot does not belong to the selected parking lot");
+        }
+
+        if (parkingSpot.isDisabledSpot() && !vehicle.isDisabledParkingRequired()) {
+            throw new IllegalArgumentException("Only vehicles marked as requiring disabled parking can reserve disabled parking spots");
+        }
+
+        if (parkingSpot.isElectricChargingSpot() && vehicle.getEngineType() != EngineType.ELECTRIC) {
+            throw new IllegalArgumentException("Only electric vehicles can reserve electric charging spots");
         }
 
         Reservation reservation = Reservation.builder()
                 .user(user)
                 .vehicle(vehicle)
                 .parkingLot(parkingLot)
+                .parkingSpot(parkingSpot)
                 .reservationType(dto.getReservationType())
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
-                .disabledParkingSpotRequired(dto.isDisabledParkingSpotRequired())
-                .electricChargingRequired(dto.isElectricChargingRequired())
+                .disabledParkingSpotRequired(parkingSpot.isDisabledSpot())
+                .electricChargingRequired(parkingSpot.isElectricChargingSpot())
                 .status(ReservationStatus.ACTIVE)
                 .totalPrice(calculatePrice(dto, parkingLot))
                 .createdOn(LocalDateTime.now())
@@ -104,7 +147,6 @@ public class ReservationService {
         switch (dto.getReservationType()) {
 
             case DAILY -> {
-                // DAILY може да бъде 1 ден, 2 дни, 1 седмица и т.н.
             }
 
             case MONTHLY -> {
@@ -155,6 +197,24 @@ public class ReservationService {
         }
 
         return days;
+    }
+
+    public List<Reservation> getAllReservations() {
+        return reservationRepository.findAll();
+    }
+
+    public void cancelReservationByAdmin(UUID reservationId) {
+
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+
+        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
+            throw new IllegalArgumentException("Only active reservations can be cancelled");
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+
+        reservationRepository.save(reservation);
     }
 
 }

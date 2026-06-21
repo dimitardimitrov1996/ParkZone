@@ -3,9 +3,11 @@ package bg.softuni.parkzone.web.reservation;
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserDto;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
+import bg.softuni.parkzone.model.entities.parkingsport.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import bg.softuni.parkzone.service.parkinglot.ParkingLotService;
+import bg.softuni.parkzone.service.parkingspot.ParkingSpotService;
 import bg.softuni.parkzone.service.reservation.ReservationService;
 import bg.softuni.parkzone.service.user.UserService;
 import bg.softuni.parkzone.service.vehicle.VehicleService;
@@ -30,12 +32,14 @@ public class ReservationController {
     private final UserService userService;
     private final VehicleService vehicleService;
     private final ParkingLotService parkingLotService;
+    private final ParkingSpotService parkingSpotService;
 
-    public ReservationController(ReservationService reservationService, UserService userService, VehicleService vehicleService, ParkingLotService parkingLotService) {
+    public ReservationController(ReservationService reservationService, UserService userService, VehicleService vehicleService, ParkingLotService parkingLotService, ParkingSpotService parkingSpotService) {
         this.reservationService = reservationService;
         this.userService = userService;
         this.vehicleService = vehicleService;
         this.parkingLotService = parkingLotService;
+        this.parkingSpotService = parkingSpotService;
     }
 
     @GetMapping
@@ -62,6 +66,7 @@ public class ReservationController {
 
         List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(user.getId());
         List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
+        List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
 
         ModelAndView modelAndView = new ModelAndView("reservations/create");
 
@@ -69,6 +74,7 @@ public class ReservationController {
         modelAndView.addObject("reservationCreateRequestDTO", ReservationCreateRequestDTO.builder().build());
         modelAndView.addObject("vehicles", vehicles);
         modelAndView.addObject("parkingLots", parkingLots);
+        modelAndView.addObject("parkingSpots", parkingSpots);
 
         return modelAndView;
 
@@ -84,7 +90,7 @@ public class ReservationController {
         UserDto user = userService.findById(userId);
 
         if (bindingResult.hasErrors()) {
-            return getCreateReservationView(userId, user, reservationCreateRequestDTO);
+            return getCreateReservationView(userId, user, bindingResult);
         }
 
         try {
@@ -92,32 +98,34 @@ public class ReservationController {
         } catch (IllegalArgumentException e) {
 
             String message = e.getMessage();
+            String lowerMessage = message.toLowerCase();
+            System.out.println("RESERVATION ERROR: " + message);
 
-            if (message.contains("disabled parking")) {
-                bindingResult.rejectValue(
-                        "disabledParkingSpotRequired",
-                        "disabledParkingSpotRequired.error",
-                        message
-                );
-            } else if (message.contains("electric")) {
-                bindingResult.rejectValue(
-                        "electricChargingRequired",
-                        "electricChargingRequired.error",
-                        message
-                );
-            } else if (message.contains("End date")
-                    || message.contains("Monthly")
-                    || message.contains("Yearly")) {
-                bindingResult.rejectValue(
-                        "endDate",
-                        "endDate.error",
-                        message
-                );
-            } else {
-                bindingResult.reject("reservationError", message);
+            bindingResult.reject("reservationError", message);
+
+            if (lowerMessage.contains("end date")
+                    || lowerMessage.contains("monthly")
+                    || lowerMessage.contains("yearly")) {
+
+                bindingResult.rejectValue("endDate", "endDate.error", message);
+
+            } else if (lowerMessage.contains("indoor parking")) {
+
+                bindingResult.rejectValue("parkingLotId", "parkingLotId.error", message);
+
+            } else if (lowerMessage.contains("parking spot")
+                    || lowerMessage.contains("selected parking spot")
+                    || lowerMessage.contains("reserved")
+                    || lowerMessage.contains("disabled")
+                    || lowerMessage.contains("electric")) {
+
+                bindingResult.rejectValue("parkingSpotId", "parkingSpotId.error", message);
+            }  else if (lowerMessage.contains("vehicle already")) {
+
+                bindingResult.rejectValue("vehicleId", "vehicleId.error", message);
             }
 
-            return getCreateReservationView(userId, user, reservationCreateRequestDTO);
+            return getCreateReservationView(userId, user, bindingResult);
         }
 
         return new ModelAndView("redirect:/reservations");
@@ -126,16 +134,21 @@ public class ReservationController {
     private ModelAndView getCreateReservationView(
             UUID userId,
             UserDto user,
-            ReservationCreateRequestDTO reservationCreateRequestDTO) {
+            BindingResult bindingResult) {
 
         List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(userId);
         List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
+        List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
 
-        ModelAndView modelAndView = new ModelAndView("reservations/create");
+        ModelAndView modelAndView = new ModelAndView(
+                "reservations/create",
+                bindingResult.getModel()
+        );
+
         modelAndView.addObject("user", user);
-        modelAndView.addObject("reservationCreateRequestDTO", reservationCreateRequestDTO);
         modelAndView.addObject("vehicles", vehicles);
         modelAndView.addObject("parkingLots", parkingLots);
+        modelAndView.addObject("parkingSpots", parkingSpots);
 
         return modelAndView;
     }
