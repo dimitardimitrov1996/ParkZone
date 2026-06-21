@@ -15,11 +15,9 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.UUID;
@@ -151,6 +149,23 @@ public class ReservationController {
         modelAndView.addObject("parkingSpots", parkingSpots);
 
         return modelAndView;
+    }
+
+    @PostMapping("/cancel/{id}")
+    public ModelAndView cancelReservation(@PathVariable UUID id,
+                                          HttpSession session,
+                                          RedirectAttributes redirectAttributes) {
+
+        UUID userId = (UUID) session.getAttribute("user_id");
+
+        try {
+            reservationService.cancelReservationByUser(id, userId);
+            redirectAttributes.addFlashAttribute("successMessage", "Reservation cancelled successfully");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return new ModelAndView("redirect:/reservations");
     }
 
 

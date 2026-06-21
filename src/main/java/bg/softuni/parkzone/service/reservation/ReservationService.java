@@ -59,6 +59,10 @@ public class ReservationService {
         ParkingSpot parkingSpot = parkingSpotRepository.findById(dto.getParkingSpotId())
                 .orElseThrow(() -> new IllegalArgumentException("Parking spot not found"));
 
+        if (!vehicle.isActive()) {
+            throw new IllegalArgumentException("This vehicle is no longer active");
+        }
+
         if (!parkingSpot.isActive()) {
             throw new IllegalArgumentException("This parking spot is not active");
         }
@@ -217,4 +221,21 @@ public class ReservationService {
         reservationRepository.save(reservation);
     }
 
+    public void cancelReservationByUser(UUID reservationId, UUID userId) {
+
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+
+        if (!reservation.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You cannot cancel this reservation");
+        }
+
+        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
+            throw new IllegalArgumentException("Only active reservations can be cancelled");
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+
+        reservationRepository.save(reservation);
+    }
 }

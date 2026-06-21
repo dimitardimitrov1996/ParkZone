@@ -26,5 +26,10 @@ public class ParkingLotService {
                 .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
     }
 
+    public ParkingLot getParkingLotById(UUID id) {
+        return parkingLotRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
+    }
+
 }
 

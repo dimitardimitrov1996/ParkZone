@@ -12,8 +12,12 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, UUID> 
 
     List<ParkingSpot> findAllByActiveTrue();
 
-    List<ParkingSpot> findAllByParkingLotId(UUID parkingLotId);
+    List<ParkingSpot> findAllByParkingLotIdOrderBySpotNumberAsc(UUID parkingLotId);
 
     boolean existsByParkingLotIdAndSpotNumber(UUID parkingLotId, int spotNumber);
+
+    int countByParkingLotIdAndDisabledSpotTrue(UUID parkingLotId);
+
+    int countByParkingLotIdAndElectricChargingSpotTrue(UUID parkingLotId);
 
 }
