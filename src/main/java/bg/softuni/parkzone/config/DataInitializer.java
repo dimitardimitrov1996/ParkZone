@@ -9,6 +9,7 @@ import bg.softuni.parkzone.repository.user.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 
@@ -18,6 +19,12 @@ public class DataInitializer implements CommandLineRunner {
     private final ParkingLotRepository parkingLotRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.admin.password}")
+    private String adminPassword;
+
+    @Value("${app.user.password}")
+    private String userPassword;
 
     public DataInitializer(ParkingLotRepository parkingLotRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.parkingLotRepository = parkingLotRepository;
@@ -41,7 +48,7 @@ public class DataInitializer implements CommandLineRunner {
         User user = User.builder()
                 .username("user1")
                 .email("user@abv.bg")
-                .password(passwordEncoder.encode("user123"))
+                .password(passwordEncoder.encode(userPassword))
                 .firstName("Basic")
                 .lastName("User")
                 .phoneNumber("0888888888")
@@ -61,7 +68,7 @@ public class DataInitializer implements CommandLineRunner {
         User admin = User.builder()
                 .username("admin1")
                 .email("admin@abv.bg")
-                .password(passwordEncoder.encode("admin123"))
+                .password(passwordEncoder.encode(adminPassword))
                 .firstName("Admin")
                 .lastName("User")
                 .phoneNumber("0888123456")
