@@ -34,7 +34,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
-    @Pattern(regexp = "^(\\+359|0)[0-9]{9}$", message = "Phone number must start with +359 or 0 and contain 10 digits")
+    @Pattern(regexp = "$|^((0)[0-9]{9})$", message = "Phone number must start with 0 and contain 10 digits")
     private String phoneNumber;
 
     @Column(nullable = false)
