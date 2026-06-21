@@ -16,7 +16,11 @@ import java.util.UUID;
 @Component
 public class SessionInterceptor implements HandlerInterceptor {
 
-    private static final Set<String> UNAUTHENTICATED_ENDPOINTS = Set.of("/", "/login", "/register");
+    private static final Set<String> UNAUTHENTICATED_ENDPOINTS = Set.of(
+            "/",
+            "/login",
+            "/register"
+    );
 
     private final UserService userService;
 
@@ -29,7 +33,7 @@ public class SessionInterceptor implements HandlerInterceptor {
                              HttpServletResponse response,
                              Object handler) throws Exception {
 
-        String endpoint = request.getServletPath();
+        String endpoint = request.getRequestURI();
 
         if (UNAUTHENTICATED_ENDPOINTS.contains(endpoint)) {
             return true;
@@ -55,6 +59,11 @@ public class SessionInterceptor implements HandlerInterceptor {
         if (!user.isActive()) {
             session.invalidate();
             response.sendRedirect("/login");
+            return false;
+        }
+
+        if (endpoint.startsWith("/admin") && !userService.isAdmin(userId)) {
+            response.sendRedirect("/home");
             return false;
         }
 
