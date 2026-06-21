@@ -183,7 +183,7 @@ public class DataInitializer implements CommandLineRunner {
         );
 
         createVehicleIfNotExists(
-                "CA2222EV",
+                "EA2222EV",
                 "Tesla",
                 "Model 3",
                 VehicleType.CAR,
@@ -233,6 +233,7 @@ public class DataInitializer implements CommandLineRunner {
                 .engineType(engineType)
                 .disabledParkingRequired(disabledParkingRequired)
                 .owner(owner)
+                .active(true)
                 .build();
 
         vehicleRepository.save(vehicle);
