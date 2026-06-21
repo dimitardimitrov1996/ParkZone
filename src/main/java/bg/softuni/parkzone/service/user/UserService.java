@@ -2,10 +2,16 @@ package bg.softuni.parkzone.service.user;
 
 import bg.softuni.parkzone.model.dto.user.UserDto;
 import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
+import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
+import bg.softuni.parkzone.model.entities.reservation.Reservation;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
+import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
+import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
 import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,10 +25,14 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final VehicleRepository vehicleRepository;
+    private final ReservationRepository reservationRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, VehicleRepository vehicleRepository, ReservationRepository reservationRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.vehicleRepository = vehicleRepository;
+        this.reservationRepository = reservationRepository;
     }
 
 
@@ -127,6 +137,40 @@ public class UserService {
         user.setActive(!user.isActive());
 
         userRepository.save(user);
+    }
+
+    public UserProfileUpdateRequestDTO getUserProfileData(UUID userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        return UserProfileUpdateRequestDTO.builder()
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .phoneNumber(user.getPhoneNumber())
+                .build();
+    }
+
+    public void updateUserProfile(UUID userId, UserProfileUpdateRequestDTO dto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setFirstName(emptyToNull(dto.getFirstName()));
+        user.setLastName(emptyToNull(dto.getLastName()));
+        user.setPhoneNumber(emptyToNull(dto.getPhoneNumber()));
+
+        userRepository.save(user);
+    }
+
+    private String emptyToNull(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        return value.trim();
     }
 
 }
