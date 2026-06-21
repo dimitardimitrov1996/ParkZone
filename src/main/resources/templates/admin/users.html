@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Users</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone Admin</strong></div>
+    <div>
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/parking-lots">Parking Lots</a>
+        <a href="/admin/vehicles">Vehicles</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/reservations">Reservations</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Users</h2>
+
+        <div th:if="${#lists.isEmpty(users)}">
+            <p>No users found.</p>
+        </div>
+
+        <div th:if="${!#lists.isEmpty(users)}">
+            <table>
+                <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                <tr th:each="u : ${users}">
+                    <td th:text="${u.username}"></td>
+
+                    <td th:text="${(u.firstName != null ? u.firstName : '') + ' ' + (u.lastName != null ? u.lastName : '')}">
+
+                    </td>
+
+                    <td th:text="${u.email}"></td>
+
+                    <td th:text="${u.phoneNumber != null ? u.phoneNumber : '—'}"></td>
+
+                    <td th:text="${u.role}">USER</td>
+
+                    <td th:text="${u.active ? 'Active' : 'Inactive'}"
+                        th:class="${u.active ? 'status-active' : 'status-inactive'}">
+                    </td>
+                    <td>
+                        <form th:action="@{/admin/users/toggle-status/{id}(id=${u.id})}"
+                              method="post"
+                              class="inline-form">
+
+                            <button type="submit"
+                                    th:class="${u.active ? 'btn-danger' : 'btn'}"
+                                    th:text="${u.active ? 'Deactivate' : 'Activate'}"
+                                    onclick="return confirm('Are you sure you want to change this user status?')">
+                            </button>
+
+                        </form>
+                    </td>
+
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

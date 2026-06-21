@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -70,6 +71,10 @@ public class UserService {
 
         User user = existingUser.get();
 
+        if (!user.isActive()) {
+            throw new IllegalArgumentException("Your account is inactive. Please contact an administrator.");
+        }
+
         return UserDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -105,4 +110,23 @@ public class UserService {
 
         return user.getRole() == UserRole.ADMIN && user.isActive();
     }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public void toggleUserStatus(UUID userId, UUID currentAdminId) {
+
+        if (userId.equals(currentAdminId)) {
+            throw new IllegalArgumentException("You cannot deactivate your own admin account");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setActive(!user.isActive());
+
+        userRepository.save(user);
+    }
+
 }
