@@ -55,6 +55,10 @@ public class IndexController {
         UserDto user = userService.login(userLoginRequestDTO);
         httpSession.setAttribute("user_id", user.getId());
 
+        if (userService.isAdmin(user.getId())) {
+            return new ModelAndView("redirect:/admin");
+        }
+
         return new ModelAndView("redirect:/home");
     }
 

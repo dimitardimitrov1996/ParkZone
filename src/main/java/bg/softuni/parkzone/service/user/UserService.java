@@ -85,6 +85,7 @@ public class UserService {
     public UserDto findById(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow(()
                 -> new RuntimeException("User not found"));
+
         return UserDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -95,5 +96,13 @@ public class UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .isActive(user.isActive())
                 .build();
+    }
+
+    public boolean isAdmin(UUID userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        return user.getRole() == UserRole.ADMIN && user.isActive();
     }
 }
