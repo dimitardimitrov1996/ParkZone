@@ -193,6 +193,10 @@ public class VehicleService {
             throw new IllegalArgumentException("Vehicle is already active");
         }
 
+        if (!vehicle.getOwner().isActive()) {
+            throw new IllegalArgumentException("Cannot activate vehicle because the owner is inactive");
+        }
+
         vehicle.setActive(true);
         vehicleRepository.save(vehicle);
     }
