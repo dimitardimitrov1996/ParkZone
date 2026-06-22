@@ -71,8 +71,7 @@
                 <label for="phoneNumber">Phone Number</label>
                 <input id="phoneNumber"
                        type="text"
-                       th:field="*{phoneNumber}"
-                       placeholder="+359888123456 or 0888123456">
+                       th:field="*{phoneNumber}">
 
                 <div class="error"
                      th:if="${#fields.hasErrors('phoneNumber')}"
