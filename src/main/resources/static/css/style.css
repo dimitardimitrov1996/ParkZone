@@ -245,6 +245,28 @@ tr:hover {
     font-weight: 700;
 }
 
-.inline-form {
+.status-cancelled {
+    color: #c62828;
+    font-weight: bold;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: #0000ee;
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+}
+
+.action-form {
     display: inline;
+}
+
+.empty-box {
+    padding: 20px;
+    background: #f8f8f8;
+    border-radius: 10px;
+    margin-top: 15px;
 }
