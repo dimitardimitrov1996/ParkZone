@@ -40,26 +40,30 @@ public class IndexController {
     }
 
     @PostMapping("/login")
-    public ModelAndView  login(@ModelAttribute("userLoginRequest")
+    public ModelAndView  login(@ModelAttribute("userLoginRequestDTO")
                                    @Valid UserLoginRequestDTO userLoginRequestDTO,
                                BindingResult bindingResult, HttpSession httpSession,
                                HttpServletResponse response) {
 
 
         if (bindingResult.hasErrors()) {
-            ModelAndView modelAndView = new ModelAndView();
-            modelAndView.setViewName("login");
-            return modelAndView;
+            return new ModelAndView("login", bindingResult.getModel());
         }
 
-        UserDto user = userService.login(userLoginRequestDTO);
-        httpSession.setAttribute("user_id", user.getId());
+        try {
+            UserDto user = userService.login(userLoginRequestDTO);
+            httpSession.setAttribute("user_id", user.getId());
 
-        if (userService.isAdmin(user.getId())) {
-            return new ModelAndView("redirect:/admin");
+            if (userService.isAdmin(user.getId())) {
+                return new ModelAndView("redirect:/admin");
+            }
+
+            return new ModelAndView("redirect:/home");
+
+        } catch (IllegalArgumentException e) {
+            bindingResult.reject("loginError", e.getMessage());
+            return new ModelAndView("login", bindingResult.getModel());
         }
-
-        return new ModelAndView("redirect:/home");
     }
 
 
@@ -72,7 +76,7 @@ public class IndexController {
     }
 
     @PostMapping("/register")
-    public ModelAndView register(@ModelAttribute("userRegisterRequest")
+    public ModelAndView register(@ModelAttribute("userRegisterRequestDTO")
                                      @Valid UserRegisterRequestDTO userRegisterRequestDTO,
                                  BindingResult bindingResult) {
 
@@ -80,7 +84,22 @@ public class IndexController {
             return  new ModelAndView("register");
         }
 
-        userService.register(userRegisterRequestDTO);
+        try {
+            userService.register(userRegisterRequestDTO);
+        } catch (IllegalArgumentException e) {
+
+            String message = e.getMessage().toLowerCase();
+
+            if (message.contains("username")) {
+                bindingResult.rejectValue("username", "username.error", e.getMessage());
+            } else if (message.contains("email")) {
+                bindingResult.rejectValue("email", "email.error", e.getMessage());
+            } else {
+                bindingResult.reject("registerError", e.getMessage());
+            }
+
+            return new ModelAndView("register", bindingResult.getModel());
+        }
 
         return new ModelAndView("redirect:/login");
     }

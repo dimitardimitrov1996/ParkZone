@@ -22,13 +22,13 @@
             <div class="form-group">
                 <label>Username</label>
                 <input type="text" id="username" th:field="*{username}" required>
-                <div class="alert-warning" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                <div class="error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
             </div>
 
             <div class="form-group">
                 <label>Email</label>
                 <input type="email" id="email" th:field="*{email}" required>
-                <div class="alert-warning" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                <div class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
             </div>
 
             <div class="form-group">

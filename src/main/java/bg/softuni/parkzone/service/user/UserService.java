@@ -40,11 +40,11 @@ public class UserService {
 
 
         userRepository.findByUsername(userRegisterRequestDTO.getUsername()).ifPresent(user -> {
-                throw new RuntimeException("Account with this username already exists");
+                throw new IllegalArgumentException("Account with this username already exists");
         });
 
         userRepository.findByEmail(userRegisterRequestDTO.getEmail()).ifPresent(user -> {
-            throw new RuntimeException("Account with this email already exists");
+            throw new IllegalArgumentException("Account with this email already exists");
         });
 
 
@@ -76,7 +76,7 @@ public class UserService {
 
         if(existingUser.isEmpty() ||
                 !passwordEncoder.matches(userLoginRequestDTO.getPassword(), existingUser.get().getPassword())) {
-            throw new RuntimeException("Invalid credentials, please try again");
+            throw new IllegalArgumentException("Invalid credentials, please try again");
         }
 
         User user = existingUser.get();
@@ -99,7 +99,7 @@ public class UserService {
 
     public UserDto findById(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow(()
-                -> new RuntimeException("User not found"));
+                -> new IllegalArgumentException("User not found"));
 
         return UserDto.builder()
                 .id(user.getId())
