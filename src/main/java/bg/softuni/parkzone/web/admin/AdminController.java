@@ -69,11 +69,17 @@ public class AdminController {
 
     @PostMapping("/users/toggle-status/{id}")
     public ModelAndView toggleUserStatus(@PathVariable UUID id,
-                                         HttpSession session) {
+                                         HttpSession session,
+                                         RedirectAttributes redirectAttributes) {
 
         UUID currentAdminId = (UUID) session.getAttribute("user_id");
 
-        userService.toggleUserStatus(id, currentAdminId);
+        try {
+            userService.toggleUserStatus(id, currentAdminId);
+            redirectAttributes.addFlashAttribute("successMessage", "User status changed successfully");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
 
         return new ModelAndView("redirect:/admin/users");
     }

@@ -12,6 +12,7 @@ import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -125,6 +126,7 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    @Transactional
     public void toggleUserStatus(UUID userId, UUID currentAdminId) {
 
         if (userId.equals(currentAdminId)) {
@@ -134,7 +136,37 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        user.setActive(!user.isActive());
+        if (user.isActive()) {
+            user.setActive(false);
+
+            List<Vehicle> userVehicles = vehicleRepository.findAllByOwnerId(userId);
+
+            for (Vehicle vehicle : userVehicles) {
+                vehicle.setActive(false);
+            }
+
+            vehicleRepository.saveAll(userVehicles);
+
+            List<Reservation> activeReservations = reservationRepository
+                    .findAllByUserIdAndStatus(userId, ReservationStatus.ACTIVE);
+
+            for (Reservation reservation : activeReservations) {
+                reservation.setStatus(ReservationStatus.CANCELLED);
+            }
+
+            reservationRepository.saveAll(activeReservations);
+
+        } else {
+            user.setActive(true);
+
+            List<Vehicle> userVehicles = vehicleRepository.findAllByOwnerId(userId);
+
+            for (Vehicle vehicle : userVehicles) {
+                vehicle.setActive(true);
+            }
+
+            vehicleRepository.saveAll(userVehicles);
+        }
 
         userRepository.save(user);
     }
