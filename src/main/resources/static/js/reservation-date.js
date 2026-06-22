@@ -1,34 +1,13 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const reservationType = document.getElementById("reservationType");
-    const startDate = document.getElementById("startDate");
-    const endDate = document.getElementById("endDate");
+    const reservationTypeSelect = document.getElementById("reservationType");
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
 
-    if (!reservationType || !startDate || !endDate) {
+    if (!reservationTypeSelect || !startDateInput || !endDateInput) {
         return;
     }
 
-    function updateEndDate() {
-        if (!reservationType.value || !startDate.value) {
-            return;
-        }
-
-        const start = new Date(startDate.value);
-        const end = new Date(start);
-
-        if (reservationType.value === "MONTHLY") {
-            end.setMonth(end.getMonth() + 1);
-            endDate.value = formatDateTime(end);
-            endDate.readOnly = true;
-        } else if (reservationType.value === "YEARLY") {
-            end.setFullYear(end.getFullYear() + 1);
-            endDate.value = formatDateTime(end);
-            endDate.readOnly = true;
-        } else {
-            endDate.readOnly = false;
-        }
-    }
-
-    function formatDateTime(date) {
+    function formatDateTimeLocal(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
         const day = String(date.getDate()).padStart(2, "0");
@@ -38,8 +17,44 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
-    reservationType.addEventListener("change", updateEndDate);
-    startDate.addEventListener("change", updateEndDate);
+    function calculateEndDate() {
+        if (!startDateInput.value) {
+            return;
+        }
 
-    updateEndDate();
+        const startDate = new Date(startDateInput.value);
+        const reservationType = reservationTypeSelect.value;
+
+        if (reservationType === "MONTHLY") {
+            startDate.setMonth(startDate.getMonth() + 1);
+            endDateInput.value = formatDateTimeLocal(startDate);
+            endDateInput.readOnly = true;
+            return;
+        }
+
+        if (reservationType === "YEARLY") {
+            startDate.setFullYear(startDate.getFullYear() + 1);
+            endDateInput.value = formatDateTimeLocal(startDate);
+            endDateInput.readOnly = true;
+            return;
+        }
+
+        endDateInput.readOnly = false;
+    }
+
+    function updateEndDateModeWithoutChangingExistingValue() {
+        const reservationType = reservationTypeSelect.value;
+
+        if (reservationType === "MONTHLY" || reservationType === "YEARLY") {
+            endDateInput.readOnly = true;
+            return;
+        }
+
+        endDateInput.readOnly = false;
+    }
+
+    reservationTypeSelect.addEventListener("change", calculateEndDate);
+    startDateInput.addEventListener("change", calculateEndDate);
+
+    updateEndDateModeWithoutChangingExistingValue();
 });
