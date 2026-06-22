@@ -27,11 +27,9 @@ public class VehicleCreateRequestDTO {
     private String model;
 
     @NotNull(message = "Vehicle type is required")
-    @Enumerated(EnumType.STRING)
     private VehicleType vehicleType;
 
     @NotNull(message = "Engine type is required")
-    @Enumerated(EnumType.STRING)
     private EngineType engineType;
 
     private boolean disabledParkingRequired;

@@ -1,7 +1,6 @@
 package bg.softuni.parkzone.model.dto.reservation;
 
 import bg.softuni.parkzone.model.entities.reservation.ReservationType;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
