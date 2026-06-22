@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>parkzone</groupId>
-    <artifactId>parkzone-appliaction</artifactId>
+    <artifactId>parkzone-application</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Park Zone Application</name>
     <description>Park Zone Application</description>
