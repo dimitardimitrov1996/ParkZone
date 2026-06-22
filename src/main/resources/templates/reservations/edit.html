@@ -11,6 +11,8 @@
     <div><strong>ParkZone</strong></div>
     <div>
         <a href="/home">Home</a>
+        <a href="/profile">Profile</a>
+        <a href="/vehicles">Vehicles</a>
         <a href="/reservations/create">Make a reservation</a>
         <a href="/logout">Logout</a>
     </div>
@@ -22,17 +24,22 @@
         <h2>Edit Reservation</h2>
 
         <form th:action="@{/reservations/edit/{id}(id=${reservationId})}"
-              th:object="${reservationCreateRequestDTO}"
-              method="post">
+              th:object="${reservationEditRequestDTO}"
+              method="post"
+              novalidate>
 
-            <input type="hidden" name="_method" value="PUT">
+            <input type="hidden" name="_method" value="put">
+
+            <div class="error"
+                 th:if="${#fields.hasGlobalErrors()}"
+                 th:each="err : ${#fields.globalErrors()}"
+                 th:text="${err}">
+            </div>
 
             <div class="form-group">
                 <label for="vehicleId">Vehicle</label>
-
-                <select id="vehicleId" th:field="*{vehicleId}" required>
+                <select id="vehicleId" th:field="*{vehicleId}">
                     <option value="">Select vehicle</option>
-
                     <option th:each="v : ${vehicles}"
                             th:value="${v.id}"
                             th:text="${v.registrationNumber + ' - ' + v.brand + ' ' + v.model}">
@@ -47,13 +54,11 @@
 
             <div class="form-group">
                 <label for="parkingLotId">Parking Lot</label>
-
-                <select id="parkingLotId" th:field="*{parkingLotId}" required>
+                <select id="parkingLotId" th:field="*{parkingLotId}">
                     <option value="">Select parking lot</option>
-
                     <option th:each="p : ${parkingLots}"
                             th:value="${p.id}"
-                            th:text="${p.name}">
+                            th:text="${p.name + ' - ' + p.parkingType}">
                     </option>
                 </select>
 
@@ -65,15 +70,14 @@
 
             <div class="form-group">
                 <label for="parkingSpotId">Parking Spot</label>
-
-                <select id="parkingSpotId" th:field="*{parkingSpotId}" required>
+                <select id="parkingSpotId" th:field="*{parkingSpotId}">
                     <option value="">Select parking spot</option>
-
                     <option th:each="s : ${parkingSpots}"
                             th:value="${s.id}"
+                            th:attr="data-parking-lot-id=${s.parkingLot.id}"
                             th:text="${s.parkingLot.name + ' - Spot ' + s.spotNumber + ' - ' +
-                    (s.disabledSpot ? 'Disabled' :
-                    (s.electricChargingSpot ? 'Electric charging' : 'Normal'))}">
+                            (s.disabledSpot ? 'Disabled' :
+                            (s.electricChargingSpot ? 'Electric charging' : 'Normal'))}">
                     </option>
                 </select>
 
@@ -85,15 +89,19 @@
 
             <div class="form-group">
                 <label for="reservationType">Reservation Type</label>
-
-                <select id="reservationType" th:field="*{reservationType}" required>
-                    <option value="">Select reservation type</option>
-
+                <select id="reservationType"
+                        th:field="*{reservationType}"
+                        th:disabled="${reservationStarted}">
+                    <option value="">Select type</option>
                     <option th:each="type : ${T(bg.softuni.parkzone.model.entities.reservation.ReservationType).values()}"
                             th:value="${type}"
                             th:text="${type}">
                     </option>
                 </select>
+
+                <input th:if="${reservationStarted}"
+                       type="hidden"
+                       th:field="*{reservationType}">
 
                 <div class="error"
                      th:if="${#fields.hasErrors('reservationType')}"
@@ -103,11 +111,10 @@
 
             <div class="form-group">
                 <label for="startDate">Start Date</label>
-
                 <input id="startDate"
                        type="datetime-local"
                        th:field="*{startDate}"
-                       required>
+                       th:readonly="${reservationStarted}">
 
                 <div class="error"
                      th:if="${#fields.hasErrors('startDate')}"
@@ -117,11 +124,10 @@
 
             <div class="form-group">
                 <label for="endDate">End Date</label>
-
                 <input id="endDate"
                        type="datetime-local"
                        th:field="*{endDate}"
-                       required>
+                       th:readonly="${reservationStarted}">
 
                 <div class="error"
                      th:if="${#fields.hasErrors('endDate')}"
@@ -135,19 +141,6 @@
             </div>
 
         </form>
-
-        <form th:action="@{/reservations/cancel/{id}(id=${reservationId})}"
-              method="post"
-              class="cancel-form">
-
-            <button type="submit"
-                    class="btn-danger"
-                    onclick="return confirm('Are you sure you want to cancel this reservation?')">
-                Cancel Reservation
-            </button>
-
-        </form>
-
     </div>
 
 </div>
