@@ -158,9 +158,12 @@ public class VehicleController {
     }
 
     @PostMapping("/delete/{id}")
-    public ModelAndView deleteVehicle(@PathVariable UUID id) {
+    public ModelAndView deleteVehicle(@PathVariable UUID id,
+                                      HttpSession session) {
 
-        vehicleService.deleteVehicle(id);
+        UUID userId = (UUID) session.getAttribute("user_id");
+
+        vehicleService.deleteVehicle(id, userId);
 
         return new ModelAndView("redirect:/vehicles");
     }

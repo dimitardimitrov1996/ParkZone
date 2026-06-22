@@ -132,13 +132,30 @@ public class VehicleService {
                 .build();
     }
 
-    public void deleteVehicle(UUID id) {
-        Vehicle vehicle = vehicleRepository.findById(id)
+    public void deleteVehicle(UUID vehicleId, UUID userId) {
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+
+        if (!vehicle.getOwner().getId().equals(userId)) {
+            throw new IllegalArgumentException("You cannot delete this vehicle");
+        }
+
+        if (!vehicle.isActive()) {
+            throw new IllegalArgumentException("Vehicle is already deleted");
+        }
+
+        List<Reservation> activeReservations = reservationRepository
+                .findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE);
+
+        for (Reservation reservation : activeReservations) {
+            reservation.setStatus(ReservationStatus.CANCELLED);
+        }
+
+        reservationRepository.saveAll(activeReservations);
 
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);
-
     }
 
     public List<Vehicle> getAllVehicles() {
