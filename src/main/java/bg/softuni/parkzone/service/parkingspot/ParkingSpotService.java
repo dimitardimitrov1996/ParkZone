@@ -1,7 +1,7 @@
 package bg.softuni.parkzone.service.parkingspot;
 
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
-import bg.softuni.parkzone.model.entities.parkingsport.ParkingSpot;
+import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
 import bg.softuni.parkzone.repository.parkingspot.ParkingSpotRepository;

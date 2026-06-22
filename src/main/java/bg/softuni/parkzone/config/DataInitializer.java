@@ -2,7 +2,7 @@ package bg.softuni.parkzone.config;
 
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
-import bg.softuni.parkzone.model.entities.parkingsport.ParkingSpot;
+import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import bg.softuni.parkzone.model.entities.vehicle.EngineType;

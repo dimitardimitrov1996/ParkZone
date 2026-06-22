@@ -1,7 +1,7 @@
 package bg.softuni.parkzone.model.entities.reservation;
 
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
-import bg.softuni.parkzone.model.entities.parkingsport.ParkingSpot;
+import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import jakarta.persistence.*;

@@ -1,4 +1,4 @@
-package bg.softuni.parkzone.model.entities.parkingsport;
+package bg.softuni.parkzone.model.entities.parkingspot;
 
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import jakarta.persistence.*;

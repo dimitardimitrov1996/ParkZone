@@ -2,7 +2,7 @@ package bg.softuni.parkzone.security;
 
 
 
-import bg.softuni.parkzone.model.dto.user.UserDto;
+import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -54,7 +54,7 @@ public class SessionInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        UserDto user = userService.findById(userId);
+        UserDTO user = userService.findById(userId);
 
         if (!user.isActive()) {
             session.invalidate();

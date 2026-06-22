@@ -1,6 +1,6 @@
 package bg.softuni.parkzone.service.user;
 
-import bg.softuni.parkzone.model.dto.user.UserDto;
+import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
@@ -37,7 +37,7 @@ public class UserService {
     }
 
 
-    public UserDto register(UserRegisterRequestDTO userRegisterRequestDTO) {
+    public UserDTO register(UserRegisterRequestDTO userRegisterRequestDTO) {
 
 
         userRepository.findByUsername(userRegisterRequestDTO.getUsername()).ifPresent(user -> {
@@ -59,7 +59,7 @@ public class UserService {
 
         userRepository.save(user);
 
-        return UserDto.builder()
+        return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .firstName(user.getFirstName())
@@ -71,7 +71,7 @@ public class UserService {
                 .build();
     }
 
-    public UserDto login(@Valid UserLoginRequestDTO userLoginRequestDTO) {
+    public UserDTO login(@Valid UserLoginRequestDTO userLoginRequestDTO) {
 
         Optional<User> existingUser = userRepository.findByEmail(userLoginRequestDTO.getEmail());
 
@@ -86,7 +86,7 @@ public class UserService {
             throw new IllegalArgumentException("Your account is inactive. Please contact an administrator.");
         }
 
-        return UserDto.builder()
+        return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .firstName(user.getFirstName())
@@ -98,11 +98,11 @@ public class UserService {
                 .build();
     }
 
-    public UserDto findById(UUID userId) {
+    public UserDTO findById(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow(()
                 -> new IllegalArgumentException("User not found"));
 
-        return UserDto.builder()
+        return UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .firstName(user.getFirstName())

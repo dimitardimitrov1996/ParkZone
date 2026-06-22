@@ -2,9 +2,9 @@ package bg.softuni.parkzone.web.reservation;
 
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
-import bg.softuni.parkzone.model.dto.user.UserDto;
+import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
-import bg.softuni.parkzone.model.entities.parkingsport.ParkingSpot;
+import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import bg.softuni.parkzone.service.parkinglot.ParkingLotService;
@@ -47,7 +47,7 @@ public class ReservationController {
 
         UUID userId = (UUID) session.getAttribute("user_id");
 
-        UserDto user = userService.findById(userId);
+        UserDTO user = userService.findById(userId);
 
         List<Reservation> reservations = reservationService.getReservationsByUserId(userId);
 
@@ -62,7 +62,7 @@ public class ReservationController {
     @GetMapping("/create")
     public ModelAndView getCreateReservationPage(HttpSession session) {
 
-        UserDto user = userService.findById((UUID) session.getAttribute("user_id"));
+        UserDTO user = userService.findById((UUID) session.getAttribute("user_id"));
 
         List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(user.getId());
         List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
@@ -87,7 +87,7 @@ public class ReservationController {
             HttpSession session) {
 
         UUID userId = (UUID) session.getAttribute("user_id");
-        UserDto user = userService.findById(userId);
+        UserDTO user = userService.findById(userId);
 
         if (bindingResult.hasErrors()) {
             return getCreateReservationView(userId, user, bindingResult);
@@ -133,7 +133,7 @@ public class ReservationController {
 
     private ModelAndView getCreateReservationView(
             UUID userId,
-            UserDto user,
+            UserDTO user,
             BindingResult bindingResult) {
 
         List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(userId);
@@ -176,7 +176,7 @@ public class ReservationController {
                                                RedirectAttributes redirectAttributes) {
 
         UUID userId = (UUID) session.getAttribute("user_id");
-        UserDto user = userService.findById(userId);
+        UserDTO user = userService.findById(userId);
 
         try {
             ReservationEditRequestDTO reservationEditRequestDTO =
@@ -186,7 +186,7 @@ public class ReservationController {
             List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
             List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
 
-            boolean reservationStarted = !reservationEditRequestDTO.getStartDate().isAfter(LocalDateTime.now());
+            boolean reservationStarted = reservationService.isReservationStarted(id, userId);
 
             ModelAndView modelAndView = new ModelAndView("reservations/edit");
             modelAndView.addObject("reservationId", id);
@@ -213,7 +213,7 @@ public class ReservationController {
             HttpSession session) {
 
         UUID userId = (UUID) session.getAttribute("user_id");
-        UserDto user = userService.findById(userId);
+        UserDTO user = userService.findById(userId);
 
         boolean reservationStarted = !reservationEditRequestDTO.getStartDate().isAfter(LocalDateTime.now());
 

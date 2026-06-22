@@ -1,10 +1,9 @@
 package bg.softuni.parkzone.web;
 
-import bg.softuni.parkzone.model.dto.user.UserDto;
+import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
 import bg.softuni.parkzone.service.user.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
@@ -42,8 +41,7 @@ public class IndexController {
     @PostMapping("/login")
     public ModelAndView  login(@ModelAttribute("userLoginRequestDTO")
                                    @Valid UserLoginRequestDTO userLoginRequestDTO,
-                               BindingResult bindingResult, HttpSession httpSession,
-                               HttpServletResponse response) {
+                               BindingResult bindingResult, HttpSession httpSession) {
 
 
         if (bindingResult.hasErrors()) {
@@ -51,7 +49,7 @@ public class IndexController {
         }
 
         try {
-            UserDto user = userService.login(userLoginRequestDTO);
+            UserDTO user = userService.login(userLoginRequestDTO);
             httpSession.setAttribute("user_id", user.getId());
 
             if (userService.isAdmin(user.getId())) {
@@ -114,7 +112,7 @@ public class IndexController {
     @GetMapping("/home")
     public ModelAndView getHomePage(HttpSession httpSession) {
 
-        UserDto user = userService.findById((UUID) httpSession.getAttribute("user_id"));
+        UserDTO user = userService.findById((UUID) httpSession.getAttribute("user_id"));
 
         ModelAndView modelAndView = new ModelAndView("home");
         modelAndView.addObject("user", user);

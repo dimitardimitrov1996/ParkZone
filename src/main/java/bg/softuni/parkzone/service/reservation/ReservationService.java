@@ -4,7 +4,7 @@ import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
-import bg.softuni.parkzone.model.entities.parkingsport.ParkingSpot;
+import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.reservation.ReservationType;
@@ -24,8 +24,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
-
-import static bg.softuni.parkzone.model.entities.reservation.ReservationType.*;
 
 @Service
 public class ReservationService {
@@ -85,10 +83,6 @@ public class ReservationService {
                 dto.getEndDate(),
                 dto.getReservationType()
         );
-
-        if (!parkingSpot.getParkingLot().getId().equals(parkingLot.getId())) {
-            throw new IllegalArgumentException("Selected parking spot does not belong to the selected parking lot");
-        }
 
         boolean parkingSpotIsTaken =
                 reservationRepository.existsByParkingSpotIdAndStatusAndStartDateBeforeAndEndDateAfter(
@@ -403,4 +397,15 @@ public class ReservationService {
         reservationRepository.save(reservation);
     }
 
+    public boolean isReservationStarted(UUID reservationId, UUID userId) {
+
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+
+        if (!reservation.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You cannot edit this reservation");
+        }
+
+        return !reservation.getStartDate().isAfter(LocalDateTime.now());
+    }
 }

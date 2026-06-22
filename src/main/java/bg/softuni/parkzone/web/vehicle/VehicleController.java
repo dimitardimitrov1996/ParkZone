@@ -1,6 +1,6 @@
 package bg.softuni.parkzone.web.vehicle;
 
-import bg.softuni.parkzone.model.dto.user.UserDto;
+import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
@@ -34,7 +34,7 @@ public class VehicleController {
 
         UUID userId = (UUID) session.getAttribute("user_id");
 
-        UserDto user = userService.findById(userId);
+        UserDTO user = userService.findById(userId);
 
         List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(userId);
 
@@ -49,7 +49,7 @@ public class VehicleController {
     @GetMapping("/create")
     public ModelAndView getCreateVehiclePage(HttpSession session) {
 
-        UserDto user = userService.findById((UUID) session.getAttribute("user_id"));
+        UserDTO user = userService.findById((UUID) session.getAttribute("user_id"));
 
         ModelAndView modelAndView = new ModelAndView("vehicles/create");
 
@@ -64,7 +64,7 @@ public class VehicleController {
                                       BindingResult bindingResult,
                                       HttpSession session) {
 
-        UserDto user = userService.findById((UUID) session.getAttribute("user_id"));
+        UserDTO user = userService.findById((UUID) session.getAttribute("user_id"));
 
         if (bindingResult.hasErrors()) {
             ModelAndView modelAndView = new ModelAndView(
