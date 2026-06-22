@@ -66,14 +66,42 @@ public class VehicleController {
 
         UserDto user = userService.findById((UUID) session.getAttribute("user_id"));
 
-        if  (bindingResult.hasErrors()) {
-            ModelAndView modelAndView = new ModelAndView("vehicles/create");
-            modelAndView.addObject("vehicleCreateRequest", vehicleCreateRequestDTO);
+        if (bindingResult.hasErrors()) {
+            ModelAndView modelAndView = new ModelAndView(
+                    "vehicles/create",
+                    bindingResult.getModel()
+            );
+
             modelAndView.addObject("user", user);
+
             return modelAndView;
         }
 
-        vehicleService.createVehicle(vehicleCreateRequestDTO, user.getId());
+        try {
+            vehicleService.createVehicle(vehicleCreateRequestDTO, user.getId());
+        } catch (IllegalArgumentException e) {
+
+            String message = e.getMessage().toLowerCase();
+
+            if (message.contains("registration")) {
+                bindingResult.rejectValue(
+                        "registrationNumber",
+                        "registrationNumber.error",
+                        e.getMessage()
+                );
+            } else {
+                bindingResult.reject("vehicleCreateError", e.getMessage());
+            }
+
+            ModelAndView modelAndView = new ModelAndView(
+                    "vehicles/create",
+                    bindingResult.getModel()
+            );
+
+            modelAndView.addObject("user", user);
+
+            return modelAndView;
+        }
 
         return new ModelAndView("redirect:/vehicles");
 
@@ -98,15 +126,33 @@ public class VehicleController {
             BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-
-            ModelAndView modelAndView = new ModelAndView("vehicles/edit");
+            ModelAndView modelAndView = new ModelAndView("vehicles/edit", bindingResult.getModel());
             modelAndView.addObject("vehicleId", id);
-            modelAndView.addObject("vehicleEditDTO", vehicleEditDTO);
-
             return modelAndView;
         }
 
-        vehicleService.editVehicle(vehicleEditDTO, id);
+        try {
+            vehicleService.editVehicle(vehicleEditDTO, id);
+        } catch (IllegalArgumentException e) {
+
+            String message = e.getMessage().toLowerCase();
+
+            if (message.contains("registration")) {
+                bindingResult.rejectValue("registrationNumber", "registrationNumber.error", e.getMessage());
+            } else if (message.contains("electric")) {
+                bindingResult.rejectValue("engineType", "engineType.error", e.getMessage());
+            } else if (message.contains("disabled")) {
+                bindingResult.rejectValue("disabledParkingRequired", "disabledParkingRequired.error", e.getMessage());
+            } else if (message.contains("indoor") || message.contains("van")) {
+                bindingResult.rejectValue("vehicleType", "vehicleType.error", e.getMessage());
+            } else {
+                bindingResult.reject("vehicleEditError", e.getMessage());
+            }
+
+            ModelAndView modelAndView = new ModelAndView("vehicles/edit", bindingResult.getModel());
+            modelAndView.addObject("vehicleId", id);
+            return modelAndView;
+        }
 
         return new ModelAndView("redirect:/vehicles");
     }

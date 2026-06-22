@@ -70,6 +70,7 @@
 			<div class="form-group">
 				<label>
 					<input type="checkbox" th:field="*{disabledParkingRequired}">
+					<div class="error" th:if="${#fields.hasErrors('disabledParkingRequired')}" th:errors="*{disabledParkingRequired}"></div>
 					Disabled parking required
 				</label>
 			</div>

@@ -1,5 +1,7 @@
 package bg.softuni.parkzone.repository.vehicle;
 
+import bg.softuni.parkzone.model.entities.reservation.Reservation;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -16,4 +18,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, UUID> {
     List<Vehicle> findAllByOwnerIdAndActiveTrue(UUID ownerId);
 
     List<Vehicle> findAllByOrderByRegistrationNumberAsc();
+
+    boolean existsByRegistrationNumberAndIdNot(String registrationNumber, UUID id);
+
 }

@@ -2,10 +2,13 @@ package bg.softuni.parkzone.service.vehicle;
 
 import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
+import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.user.User;
+import bg.softuni.parkzone.model.entities.vehicle.EngineType;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.model.entities.vehicle.VehicleType;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
@@ -69,6 +72,40 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
 
+        if (vehicleRepository.existsByRegistrationNumberAndIdNot(request.getRegistrationNumber(), id)) {
+            throw new IllegalArgumentException("Vehicle with this registration number already exists");
+        }
+
+        List<Reservation> activeReservations = reservationRepository
+                .findAllByVehicleIdAndStatus(id, ReservationStatus.ACTIVE);
+
+        boolean hasActiveChargingReservation = activeReservations.stream()
+                .anyMatch(reservation -> reservation.getParkingSpot().isElectricChargingSpot());
+
+        boolean hasActiveDisabledReservation = activeReservations.stream()
+                .anyMatch(reservation -> reservation.getParkingSpot().isDisabledSpot());
+
+        boolean hasActiveIndoorReservation = activeReservations.stream()
+                .anyMatch(reservation -> reservation.getParkingLot().getParkingType() == ParkingType.INDOOR);
+
+        if (hasActiveChargingReservation && request.getEngineType() != EngineType.ELECTRIC) {
+            throw new IllegalArgumentException(
+                    "This vehicle has an active reservation for an electric charging spot"
+            );
+        }
+
+        if (hasActiveDisabledReservation && !request.isDisabledParkingRequired()) {
+            throw new IllegalArgumentException(
+                    "This vehicle has an active reservation for a disabled parking spot"
+            );
+        }
+
+        if (hasActiveIndoorReservation && request.getVehicleType() == VehicleType.VAN) {
+            throw new IllegalArgumentException(
+                    "This vehicle has an active indoor reservation and cannot be changed to VAN"
+            );
+        }
+
         vehicle.setRegistrationNumber(request.getRegistrationNumber());
         vehicle.setBrand(request.getBrand());
         vehicle.setModel(request.getModel());
@@ -77,7 +114,6 @@ public class VehicleService {
         vehicle.setDisabledParkingRequired(request.isDisabledParkingRequired());
 
         vehicleRepository.save(vehicle);
-
     }
 
 
