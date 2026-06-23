@@ -186,9 +186,12 @@ Reservation rules:
 * Only vehicles marked as requiring disabled parking can reserve disabled parking spots.
 * A parking spot cannot be reserved if it is already taken for the selected period.
 * A vehicle cannot have another active reservation for the same period.
+* Daily reservations must be at least one full day.
 * Daily reservations are priced by number of reserved days.
 * Monthly reservations must be exactly one full month.
 * Yearly reservations must be exactly one full year.
+* Expired active reservations are automatically marked as completed.
+* Completed reservations are kept in the reservation history and do not block future reservations.
 * Started reservations can still be edited, but only the vehicle, parking lot, and parking spot can be changed. Dates and reservation type cannot be changed after the reservation has started.
 
 ### Admin User Management
