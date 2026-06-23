@@ -24,6 +24,8 @@
     <div class="card">
         <h2>Users</h2>
 
+        <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
         <div th:if="${#lists.isEmpty(users)}">
             <p>No users found.</p>
         </div>
