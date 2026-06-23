@@ -108,9 +108,11 @@ public class VehicleController {
     }
 
     @GetMapping("/edit/{id}")
-    public ModelAndView getEditVehiclePage(@PathVariable UUID id) {
+    public ModelAndView getEditVehiclePage(@PathVariable UUID id, HttpSession session) {
 
-        VehicleEditDTO vehicleEditDTO = vehicleService.getVehicleForEdit(id);
+        UUID userId = (UUID) session.getAttribute("user_id");
+
+        VehicleEditDTO vehicleEditDTO = vehicleService.getVehicleForEdit(id, userId);
 
         ModelAndView modelAndView = new ModelAndView("vehicles/edit");
         modelAndView.addObject("vehicleId", id);
@@ -123,7 +125,10 @@ public class VehicleController {
     public ModelAndView editVehicle(
             @PathVariable UUID id,
             @Valid @ModelAttribute("vehicleEditDTO") VehicleEditDTO vehicleEditDTO,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            HttpSession session) {
+
+        UUID userId = (UUID) session.getAttribute("user_id");
 
         if (bindingResult.hasErrors()) {
             ModelAndView modelAndView = new ModelAndView("vehicles/edit", bindingResult.getModel());
@@ -132,7 +137,7 @@ public class VehicleController {
         }
 
         try {
-            vehicleService.editVehicle(vehicleEditDTO, id);
+            vehicleService.editVehicle(vehicleEditDTO, id, userId);
         } catch (IllegalArgumentException e) {
 
             String message = e.getMessage().toLowerCase();

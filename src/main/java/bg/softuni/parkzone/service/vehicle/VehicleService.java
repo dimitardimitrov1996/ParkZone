@@ -68,10 +68,14 @@ public class VehicleService {
                 .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
     }
 
-    public void editVehicle(VehicleEditDTO request, UUID id) {
+    public void editVehicle(VehicleEditDTO request, UUID id, UUID userId) {
 
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+
+        if (!vehicle.getOwner().getId().equals(userId)) {
+            throw new BusinessRuleException("You cannot edit this vehicle");
+        }
 
         if (vehicleRepository.existsByRegistrationNumberAndIdNot(request.getRegistrationNumber(), id)) {
             throw new BusinessRuleException("Vehicle with this registration number already exists");
@@ -118,10 +122,14 @@ public class VehicleService {
     }
 
 
-    public VehicleEditDTO getVehicleForEdit(UUID id) {
+    public VehicleEditDTO getVehicleForEdit(UUID id, UUID userId) {
 
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+
+        if (!vehicle.getOwner().getId().equals(userId)) {
+            throw new BusinessRuleException("You cannot edit this vehicle");
+        }
 
         return VehicleEditDTO.builder()
                 .registrationNumber(vehicle.getRegistrationNumber())
