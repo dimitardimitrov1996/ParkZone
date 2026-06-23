@@ -101,7 +101,6 @@ public class ReservationController {
 
             String message = e.getMessage();
             String lowerMessage = message.toLowerCase();
-            System.out.println("RESERVATION ERROR: " + message);
 
             bindingResult.reject("reservationError", message);
 
@@ -218,7 +217,7 @@ public class ReservationController {
         UUID userId = (UUID) session.getAttribute("user_id");
         UserDTO user = userService.findById(userId);
 
-        boolean reservationStarted = !reservationEditRequestDTO.getStartDate().isAfter(LocalDateTime.now());
+        boolean reservationStarted = reservationService.isReservationStarted(id, userId);
 
         if (bindingResult.hasErrors()) {
 
