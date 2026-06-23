@@ -2,8 +2,6 @@ package bg.softuni.parkzone.model.dto.vehicle;
 
 import bg.softuni.parkzone.model.entities.vehicle.EngineType;
 import bg.softuni.parkzone.model.entities.vehicle.VehicleType;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
