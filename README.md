@@ -294,7 +294,9 @@ Examples of validated input:
 * reservation type
 * phone number format
 
-Business rule violations are handled in the service layer and returned to the user through controller-level error handling.
+Business rule violations are handled in the service layer by throwing a custom BusinessRuleException. The controllers catch these exceptions and return the user back to the form with an appropriate error message.
+
+BusinessRuleException is used for domain-specific rules such as duplicate vehicle registration numbers, invalid reservation periods, unavailable parking spots, inactive vehicles, invalid parking spot usage, and admin/user status constraints.
 
 ## Default Data
 
