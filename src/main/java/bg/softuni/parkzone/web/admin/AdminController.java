@@ -87,6 +87,8 @@ public class AdminController {
     @GetMapping("/reservations")
     public ModelAndView getAdminReservationsPage() {
 
+        reservationService.completeExpiredReservations();
+
         List<Reservation> reservations = reservationService.getAllReservations();
 
         ModelAndView modelAndView = new ModelAndView("admin/reservations");

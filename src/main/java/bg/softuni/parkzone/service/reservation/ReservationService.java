@@ -17,6 +17,7 @@ import bg.softuni.parkzone.repository.parkingspot.ParkingSpotRepository;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -408,4 +409,21 @@ public class ReservationService {
 
         return !reservation.getStartDate().isAfter(LocalDateTime.now());
     }
+
+    @Transactional
+    public void completeExpiredReservations() {
+
+        List<Reservation> expiredReservations =
+                reservationRepository.findAllByStatusAndEndDateBefore(
+                        ReservationStatus.ACTIVE,
+                        LocalDateTime.now()
+                );
+
+        for (Reservation reservation : expiredReservations) {
+            reservation.setStatus(ReservationStatus.COMPLETED);
+        }
+
+        reservationRepository.saveAll(expiredReservations);
+    }
+
 }

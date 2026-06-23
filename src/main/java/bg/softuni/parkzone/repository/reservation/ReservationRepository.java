@@ -53,5 +53,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
             LocalDateTime startDate
     );
 
-
+    List<Reservation> findAllByStatusAndEndDateBefore(ReservationStatus reservationStatus, LocalDateTime endDate);
 }

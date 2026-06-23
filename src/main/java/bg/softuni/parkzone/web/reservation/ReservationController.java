@@ -45,6 +45,8 @@ public class ReservationController {
     @GetMapping
     public ModelAndView getReservationsByOwner(HttpSession session) {
 
+        reservationService.completeExpiredReservations();
+
         UUID userId = (UUID) session.getAttribute("user_id");
 
         UserDTO user = userService.findById(userId);
