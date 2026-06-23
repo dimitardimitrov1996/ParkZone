@@ -106,6 +106,7 @@ public class ReservationController {
             bindingResult.reject("reservationError", message);
 
             if (lowerMessage.contains("end date")
+                    || lowerMessage.contains("daily")
                     || lowerMessage.contains("monthly")
                     || lowerMessage.contains("yearly")) {
 

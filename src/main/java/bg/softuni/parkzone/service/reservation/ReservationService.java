@@ -158,6 +158,11 @@ public class ReservationService {
 
         switch (reservationType) {
             case DAILY -> {
+                LocalDateTime minimumEndDate = startDate.plusDays(1);
+
+                if (endDate.isBefore(minimumEndDate)) {
+                    throw new IllegalArgumentException("Daily reservation must be at least 1 full day");
+                }
             }
             case MONTHLY -> {
                 LocalDateTime expectedEndDate = startDate.plusMonths(1);
