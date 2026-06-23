@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.service.reservation;
 
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
@@ -51,32 +52,32 @@ public class ReservationService {
     public void createReservation(ReservationCreateRequestDTO dto, UUID userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
 
         ParkingLot parkingLot = parkingLotRepository.findById(dto.getParkingLotId())
-                .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
 
         ParkingSpot parkingSpot = parkingSpotRepository.findById(dto.getParkingSpotId())
-                .orElseThrow(() -> new IllegalArgumentException("Parking spot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking spot not found"));
 
         if (!vehicle.isActive()) {
-            throw new IllegalArgumentException("This vehicle is no longer active");
+            throw new BusinessRuleException("This vehicle is no longer active");
         }
 
         if (!parkingSpot.isActive()) {
-            throw new IllegalArgumentException("This parking spot is not active");
+            throw new BusinessRuleException("This parking spot is not active");
         }
 
         if (!vehicle.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot make a reservation with this vehicle");
+            throw new BusinessRuleException("You cannot make a reservation with this vehicle");
         }
 
         if (vehicle.getVehicleType() == VehicleType.VAN
                 && parkingLot.getParkingType() == ParkingType.INDOOR) {
-            throw new IllegalArgumentException("Vans cannot reserve spots in the indoor parking lot");
+            throw new BusinessRuleException("Vans cannot reserve spots in the indoor parking lot");
         }
 
         validateReservationPeriod(
@@ -94,7 +95,7 @@ public class ReservationService {
                 );
 
         if (parkingSpotIsTaken) {
-            throw new IllegalArgumentException("This parking spot is already reserved for the selected period");
+            throw new BusinessRuleException("This parking spot is already reserved for the selected period");
         }
 
         boolean vehicleAlreadyReserved =
@@ -106,19 +107,19 @@ public class ReservationService {
                 );
 
         if (vehicleAlreadyReserved) {
-            throw new IllegalArgumentException("This vehicle already has an active reservation for the selected period");
+            throw new BusinessRuleException("This vehicle already has an active reservation for the selected period");
         }
 
         if (!parkingSpot.getParkingLot().getId().equals(parkingLot.getId())) {
-            throw new IllegalArgumentException("Selected parking spot does not belong to the selected parking lot");
+            throw new BusinessRuleException("Selected parking spot does not belong to the selected parking lot");
         }
 
         if (parkingSpot.isDisabledSpot() && !vehicle.isDisabledParkingRequired()) {
-            throw new IllegalArgumentException("Only vehicles marked as requiring disabled parking can reserve disabled parking spots");
+            throw new BusinessRuleException("Only vehicles marked as requiring disabled parking can reserve disabled parking spots");
         }
 
         if (parkingSpot.isElectricChargingSpot() && vehicle.getEngineType() != EngineType.ELECTRIC) {
-            throw new IllegalArgumentException("Only electric vehicles can reserve electric charging spots");
+            throw new BusinessRuleException("Only electric vehicles can reserve electric charging spots");
         }
 
         Reservation reservation = Reservation.builder()
@@ -153,7 +154,7 @@ public class ReservationService {
         }
 
         if (endDate.isBefore(startDate) || endDate.isEqual(startDate)) {
-            throw new IllegalArgumentException("End date must be after start date");
+            throw new BusinessRuleException("End date must be after start date");
         }
 
         switch (reservationType) {
@@ -161,21 +162,21 @@ public class ReservationService {
                 LocalDateTime minimumEndDate = startDate.plusDays(1);
 
                 if (endDate.isBefore(minimumEndDate)) {
-                    throw new IllegalArgumentException("Daily reservation must be at least 1 full day");
+                    throw new BusinessRuleException("Daily reservation must be at least 1 full day");
                 }
             }
             case MONTHLY -> {
                 LocalDateTime expectedEndDate = startDate.plusMonths(1);
 
                 if (!endDate.isEqual(expectedEndDate)) {
-                    throw new IllegalArgumentException("Monthly reservation must be exactly 1 full month");
+                    throw new BusinessRuleException("Monthly reservation must be exactly 1 full month");
                 }
             }
             case YEARLY -> {
                 LocalDateTime expectedEndDate = startDate.plusYears(1);
 
                 if (!endDate.isEqual(expectedEndDate)) {
-                    throw new IllegalArgumentException("Yearly reservation must be exactly 1 full year");
+                    throw new BusinessRuleException("Yearly reservation must be exactly 1 full year");
                 }
             }
         }
@@ -220,10 +221,10 @@ public class ReservationService {
     public void cancelReservationByAdmin(UUID reservationId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
 
         if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new IllegalArgumentException("Only active reservations can be cancelled");
+            throw new BusinessRuleException("Only active reservations can be cancelled");
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
@@ -234,14 +235,14 @@ public class ReservationService {
     public void cancelReservationByUser(UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
 
         if (!reservation.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot cancel this reservation");
+            throw new BusinessRuleException("You cannot cancel this reservation");
         }
 
         if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new IllegalArgumentException("Only active reservations can be cancelled");
+            throw new BusinessRuleException("Only active reservations can be cancelled");
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
@@ -252,14 +253,14 @@ public class ReservationService {
     public ReservationEditRequestDTO getReservationForEdit(UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
 
         if (!reservation.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot edit this reservation");
+            throw new BusinessRuleException("You cannot edit this reservation");
         }
 
         if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new IllegalArgumentException("Only active reservations can be edited");
+            throw new BusinessRuleException("Only active reservations can be edited");
         }
 
         return ReservationEditRequestDTO.builder()
@@ -275,14 +276,14 @@ public class ReservationService {
     public void editReservation(ReservationEditRequestDTO dto, UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
 
         if (!reservation.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot edit this reservation");
+            throw new BusinessRuleException("You cannot edit this reservation");
         }
 
         if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new IllegalArgumentException("Only active reservations can be edited");
+            throw new BusinessRuleException("Only active reservations can be edited");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -292,21 +293,21 @@ public class ReservationService {
         if (reservationAlreadyStarted) {
 
             if (!dto.getStartDate().isEqual(reservation.getStartDate())) {
-                throw new IllegalArgumentException("Start date cannot be changed after reservation has started");
+                throw new BusinessRuleException("Start date cannot be changed after reservation has started");
             }
 
             if (!dto.getEndDate().isEqual(reservation.getEndDate())) {
-                throw new IllegalArgumentException("End date cannot be changed after reservation has started");
+                throw new BusinessRuleException("End date cannot be changed after reservation has started");
             }
 
             if (dto.getReservationType() != reservation.getReservationType()) {
-                throw new IllegalArgumentException("Reservation type cannot be changed after reservation has started");
+                throw new BusinessRuleException("Reservation type cannot be changed after reservation has started");
             }
 
         } else {
 
             if (!dto.getStartDate().isAfter(now)) {
-                throw new IllegalArgumentException("Start date must be in the future");
+                throw new BusinessRuleException("Start date must be in the future");
             }
 
             validateReservationPeriod(
@@ -317,33 +318,33 @@ public class ReservationService {
         }
 
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
 
         if (!vehicle.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot use this vehicle");
+            throw new BusinessRuleException("You cannot use this vehicle");
         }
 
         if (!vehicle.isActive()) {
-            throw new IllegalArgumentException("This vehicle is not active");
+            throw new BusinessRuleException("This vehicle is not active");
         }
 
         ParkingLot parkingLot = parkingLotRepository.findById(dto.getParkingLotId())
-                .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
 
         ParkingSpot parkingSpot = parkingSpotRepository.findById(dto.getParkingSpotId())
-                .orElseThrow(() -> new IllegalArgumentException("Parking spot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking spot not found"));
 
         if (!parkingSpot.isActive()) {
-            throw new IllegalArgumentException("This parking spot is not active");
+            throw new BusinessRuleException("This parking spot is not active");
         }
 
         if (!parkingSpot.getParkingLot().getId().equals(parkingLot.getId())) {
-            throw new IllegalArgumentException("Selected parking spot does not belong to the selected parking lot");
+            throw new BusinessRuleException("Selected parking spot does not belong to the selected parking lot");
         }
 
         if (vehicle.getVehicleType() == VehicleType.VAN
                 && parkingLot.getParkingType() == ParkingType.INDOOR) {
-            throw new IllegalArgumentException("Vans cannot reserve spots in the indoor parking lot");
+            throw new BusinessRuleException("Vans cannot reserve spots in the indoor parking lot");
         }
 
         boolean parkingSpotIsTaken =
@@ -356,7 +357,7 @@ public class ReservationService {
                 );
 
         if (parkingSpotIsTaken) {
-            throw new IllegalArgumentException("This parking spot is already reserved for the selected period");
+            throw new BusinessRuleException("This parking spot is already reserved for the selected period");
         }
 
         boolean vehicleAlreadyReserved =
@@ -369,15 +370,15 @@ public class ReservationService {
                 );
 
         if (vehicleAlreadyReserved) {
-            throw new IllegalArgumentException("This vehicle already has an active reservation for the selected period");
+            throw new BusinessRuleException("This vehicle already has an active reservation for the selected period");
         }
 
         if (parkingSpot.isDisabledSpot() && !vehicle.isDisabledParkingRequired()) {
-            throw new IllegalArgumentException("Only vehicles marked as requiring disabled parking can reserve disabled parking spots");
+            throw new BusinessRuleException("Only vehicles marked as requiring disabled parking can reserve disabled parking spots");
         }
 
         if (parkingSpot.isElectricChargingSpot() && vehicle.getEngineType() != EngineType.ELECTRIC) {
-            throw new IllegalArgumentException("Only electric vehicles can reserve electric charging spots");
+            throw new BusinessRuleException("Only electric vehicles can reserve electric charging spots");
         }
 
         reservation.setVehicle(vehicle);
@@ -406,10 +407,10 @@ public class ReservationService {
     public boolean isReservationStarted(UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
 
         if (!reservation.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot edit this reservation");
+            throw new BusinessRuleException("You cannot edit this reservation");
         }
 
         return !reservation.getStartDate().isAfter(LocalDateTime.now());

@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.service.user;
 
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
@@ -41,11 +42,11 @@ public class UserService {
 
 
         userRepository.findByUsername(userRegisterRequestDTO.getUsername()).ifPresent(user -> {
-                throw new IllegalArgumentException("Account with this username already exists");
+                throw new BusinessRuleException("Account with this username already exists");
         });
 
         userRepository.findByEmail(userRegisterRequestDTO.getEmail()).ifPresent(user -> {
-            throw new IllegalArgumentException("Account with this email already exists");
+            throw new BusinessRuleException("Account with this email already exists");
         });
 
 
@@ -77,13 +78,13 @@ public class UserService {
 
         if(existingUser.isEmpty() ||
                 !passwordEncoder.matches(userLoginRequestDTO.getPassword(), existingUser.get().getPassword())) {
-            throw new IllegalArgumentException("Invalid credentials, please try again");
+            throw new BusinessRuleException("Invalid credentials, please try again");
         }
 
         User user = existingUser.get();
 
         if (!user.isActive()) {
-            throw new IllegalArgumentException("Your account is inactive. Please contact an administrator.");
+            throw new BusinessRuleException("Your account is inactive. Please contact an administrator.");
         }
 
         return UserDTO.builder()
@@ -100,7 +101,7 @@ public class UserService {
 
     public UserDTO findById(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow(()
-                -> new IllegalArgumentException("User not found"));
+                -> new BusinessRuleException("User not found"));
 
         return UserDTO.builder()
                 .id(user.getId())
@@ -117,7 +118,7 @@ public class UserService {
     public boolean isAdmin(UUID userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         return user.getRole() == UserRole.ADMIN && user.isActive();
     }
@@ -130,11 +131,11 @@ public class UserService {
     public void toggleUserStatus(UUID userId, UUID currentAdminId) {
 
         if (userId.equals(currentAdminId)) {
-            throw new IllegalArgumentException("You cannot deactivate your own admin account");
+            throw new BusinessRuleException("You cannot deactivate your own admin account");
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         if (user.isActive()) {
             user.setActive(false);
@@ -174,7 +175,7 @@ public class UserService {
     public UserProfileUpdateRequestDTO getUserProfileData(UUID userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         return UserProfileUpdateRequestDTO.builder()
                 .username(user.getUsername())
@@ -188,7 +189,7 @@ public class UserService {
     public void updateUserProfile(UUID userId, UserProfileUpdateRequestDTO dto) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         user.setFirstName(emptyToNull(dto.getFirstName()));
         user.setLastName(emptyToNull(dto.getLastName()));

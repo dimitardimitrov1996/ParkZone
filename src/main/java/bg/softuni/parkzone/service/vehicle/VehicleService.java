@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.service.vehicle;
 
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
@@ -36,12 +37,12 @@ public class VehicleService {
         if (vehicleRepository.existsByRegistrationNumber(
                 vehicleCreateRequestDTO.getRegistrationNumber())) {
 
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "Vehicle with this registration number already exists");
         }
 
         User owner = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         Vehicle vehicle = Vehicle.builder()
                 .registrationNumber(vehicleCreateRequestDTO.getRegistrationNumber())
@@ -64,16 +65,16 @@ public class VehicleService {
 
     public Vehicle findById(UUID id) {
         return vehicleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
     }
 
     public void editVehicle(VehicleEditDTO request, UUID id) {
 
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
 
         if (vehicleRepository.existsByRegistrationNumberAndIdNot(request.getRegistrationNumber(), id)) {
-            throw new IllegalArgumentException("Vehicle with this registration number already exists");
+            throw new BusinessRuleException("Vehicle with this registration number already exists");
         }
 
         List<Reservation> activeReservations = reservationRepository
@@ -89,19 +90,19 @@ public class VehicleService {
                 .anyMatch(reservation -> reservation.getParkingLot().getParkingType() == ParkingType.INDOOR);
 
         if (hasActiveChargingReservation && request.getEngineType() != EngineType.ELECTRIC) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "This vehicle has an active reservation for an electric charging spot"
             );
         }
 
         if (hasActiveDisabledReservation && !request.isDisabledParkingRequired()) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "This vehicle has an active reservation for a disabled parking spot"
             );
         }
 
         if (hasActiveIndoorReservation && request.getVehicleType() == VehicleType.VAN) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "This vehicle has an active indoor reservation and cannot be changed to VAN"
             );
         }
@@ -120,7 +121,7 @@ public class VehicleService {
     public VehicleEditDTO getVehicleForEdit(UUID id) {
 
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
 
         return VehicleEditDTO.builder()
                 .registrationNumber(vehicle.getRegistrationNumber())
@@ -135,14 +136,14 @@ public class VehicleService {
     public void deleteVehicle(UUID vehicleId, UUID userId) {
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
 
         if (!vehicle.getOwner().getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot delete this vehicle");
+            throw new BusinessRuleException("You cannot delete this vehicle");
         }
 
         if (!vehicle.isActive()) {
-            throw new IllegalArgumentException("Vehicle is already deleted");
+            throw new BusinessRuleException("Vehicle is already deleted");
         }
 
         List<Reservation> activeReservations = reservationRepository
@@ -165,10 +166,10 @@ public class VehicleService {
     public void deleteVehicleByAdmin(UUID vehicleId) {
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
 
         if (!vehicle.isActive()) {
-            throw new IllegalArgumentException("Vehicle is already deleted");
+            throw new BusinessRuleException("Vehicle is already deleted");
         }
 
         List<Reservation> activeReservations = reservationRepository
@@ -187,14 +188,14 @@ public class VehicleService {
     public void activateVehicleByAdmin(UUID vehicleId) {
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new IllegalArgumentException("Vehicle not found"));
+                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
 
         if (vehicle.isActive()) {
-            throw new IllegalArgumentException("Vehicle is already active");
+            throw new BusinessRuleException("Vehicle is already active");
         }
 
         if (!vehicle.getOwner().isActive()) {
-            throw new IllegalArgumentException("Cannot activate vehicle because the owner is inactive");
+            throw new BusinessRuleException("Cannot activate vehicle because the owner is inactive");
         }
 
         vehicle.setActive(true);

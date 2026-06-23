@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.service.parkingspot;
 
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
@@ -90,7 +91,7 @@ public class ParkingSpotService {
 
     private ParkingSpot getParkingSpot(UUID parkingSpotId) {
         return parkingSpotRepository.findById(parkingSpotId)
-                .orElseThrow(() -> new IllegalArgumentException("Parking spot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking spot not found"));
     }
 
     private void validateSpotCanBeChanged(ParkingSpot parkingSpot) {
@@ -98,13 +99,13 @@ public class ParkingSpotService {
                 .existsByParkingSpotIdAndStatus(parkingSpot.getId(), ReservationStatus.ACTIVE);
 
         if (hasActiveReservation) {
-            throw new IllegalArgumentException("This parking spot has an active reservation and cannot be changed");
+            throw new BusinessRuleException("This parking spot has an active reservation and cannot be changed");
         }
     }
 
     private void refreshParkingLotCounters(UUID parkingLotId) {
         ParkingLot parkingLot = parkingLotRepository.findById(parkingLotId)
-                .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
 
         int disabledSpots = parkingSpotRepository.countByParkingLotIdAndDisabledSpotTrue(parkingLotId);
         int electricSpots = parkingSpotRepository.countByParkingLotIdAndElectricChargingSpotTrue(parkingLotId);

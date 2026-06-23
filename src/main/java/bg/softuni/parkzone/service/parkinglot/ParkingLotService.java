@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.service.parkinglot;
 
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
 import org.springframework.stereotype.Service;
@@ -23,12 +24,12 @@ public class ParkingLotService {
 
     public ParkingLot getById(UUID id) {
         return parkingLotRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
     }
 
     public ParkingLot getParkingLotById(UUID id) {
         return parkingLotRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Parking lot not found"));
+                .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
     }
 
 }
