@@ -25,6 +25,10 @@
 		      th:object="${vehicleEditDTO}"
 		      method="post">
 
+			<input type="hidden"
+			       th:name="${_csrf.parameterName}"
+			       th:value="${_csrf.token}">
+
 			<input type="hidden" name="_method" value="PUT">
 
 			<div class="form-group">

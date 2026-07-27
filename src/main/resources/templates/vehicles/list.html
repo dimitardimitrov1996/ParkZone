@@ -54,6 +54,10 @@
 						      method="post"
 						      style="display:inline">
 
+							<input type="hidden"
+							       th:name="${_csrf.parameterName}"
+							       th:value="${_csrf.token}">
+
 							<button type="submit"
 							        class="link-button"
 							        onclick="return confirm('Delete this vehicle?')">

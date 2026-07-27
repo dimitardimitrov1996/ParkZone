@@ -57,24 +57,36 @@
                     <form th:action="@{/admin/parking-spots/{id}/make-disabled(id=${s.id})}"
                           method="post"
                           class="inline-form">
+                        <input type="hidden"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}">
                         <button type="submit" class="btn">Make Disabled</button>
                     </form>
 
                     <form th:action="@{/admin/parking-spots/{id}/make-electric(id=${s.id})}"
                           method="post"
                           class="inline-form">
+                        <input type="hidden"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}">
                         <button type="submit" class="btn">Make Electric</button>
                     </form>
 
                     <form th:action="@{/admin/parking-spots/{id}/make-normal(id=${s.id})}"
                           method="post"
                           class="inline-form">
+                        <input type="hidden"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}">
                         <button type="submit" class="btn-secondary">Make Normal</button>
                     </form>
 
                     <form th:action="@{/admin/parking-spots/{id}/toggle-active(id=${s.id})}"
                           method="post"
                           class="inline-form">
+                        <input type="hidden"
+                               th:name="${_csrf.parameterName}"
+                               th:value="${_csrf.token}">
                         <button type="submit"
                                 th:class="${s.active ? 'btn-danger' : 'btn'}"
                                 th:text="${s.active ? 'Deactivate' : 'Activate'}">
