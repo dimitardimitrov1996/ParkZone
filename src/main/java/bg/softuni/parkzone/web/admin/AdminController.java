@@ -5,12 +5,13 @@ import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import bg.softuni.parkzone.service.parkinglot.ParkingLotService;
 import bg.softuni.parkzone.service.parkingspot.ParkingSpotService;
 import bg.softuni.parkzone.service.reservation.ReservationService;
 import bg.softuni.parkzone.service.user.UserService;
 import bg.softuni.parkzone.service.vehicle.VehicleService;
-import jakarta.servlet.http.HttpSession;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,18 +42,7 @@ public class AdminController {
     }
 
     @GetMapping
-    public ModelAndView getAdminDashboard(HttpSession session) {
-
-        UUID userId = (UUID) session.getAttribute("user_id");
-
-        if (userId == null) {
-            return new ModelAndView("redirect:/login");
-        }
-
-        if (!userService.isAdmin(userId)) {
-            return new ModelAndView("redirect:/home");
-        }
-
+    public ModelAndView getAdminDashboard() {
         return new ModelAndView("admin/dashboard");
     }
 
@@ -69,10 +59,10 @@ public class AdminController {
 
     @PostMapping("/users/toggle-status/{id}")
     public ModelAndView toggleUserStatus(@PathVariable UUID id,
-                                         HttpSession session,
+                                         @AuthenticationPrincipal AuthenticationUserDetails principal,
                                          RedirectAttributes redirectAttributes) {
 
-        UUID currentAdminId = (UUID) session.getAttribute("user_id");
+        UUID currentAdminId = principal.getId();
 
         try {
             userService.toggleUserStatus(id, currentAdminId);

@@ -4,10 +4,11 @@ import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import bg.softuni.parkzone.service.user.UserService;
 import bg.softuni.parkzone.service.vehicle.VehicleService;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -30,9 +31,9 @@ public class VehicleController {
     }
 
     @GetMapping
-    public ModelAndView getAllVehicles(HttpSession session) {
+    public ModelAndView getAllVehicles(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         UserDTO user = userService.findById(userId);
 
@@ -47,9 +48,10 @@ public class VehicleController {
     }
 
     @GetMapping("/create")
-    public ModelAndView getCreateVehiclePage(HttpSession session) {
+    public ModelAndView getCreateVehiclePage(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UserDTO user = userService.findById((UUID) session.getAttribute("user_id"));
+        UUID userId = principal.getId();
+        UserDTO user = userService.findById(userId);
 
         ModelAndView modelAndView = new ModelAndView("vehicles/create");
 
@@ -62,9 +64,10 @@ public class VehicleController {
     @PostMapping("/create")
     public ModelAndView createNewVehicle(@Valid VehicleCreateRequestDTO vehicleCreateRequestDTO,
                                       BindingResult bindingResult,
-                                      HttpSession session) {
+                                      @AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UserDTO user = userService.findById((UUID) session.getAttribute("user_id"));
+        UUID userId = principal.getId();
+        UserDTO user = userService.findById(userId);
 
         if (bindingResult.hasErrors()) {
             ModelAndView modelAndView = new ModelAndView(
@@ -108,9 +111,9 @@ public class VehicleController {
     }
 
     @GetMapping("/edit/{id}")
-    public ModelAndView getEditVehiclePage(@PathVariable UUID id, HttpSession session) {
+    public ModelAndView getEditVehiclePage(@PathVariable UUID id, @AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         VehicleEditDTO vehicleEditDTO = vehicleService.getVehicleForEdit(id, userId);
 
@@ -126,9 +129,9 @@ public class VehicleController {
             @PathVariable UUID id,
             @Valid @ModelAttribute("vehicleEditDTO") VehicleEditDTO vehicleEditDTO,
             BindingResult bindingResult,
-            HttpSession session) {
+            @AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         if (bindingResult.hasErrors()) {
             ModelAndView modelAndView = new ModelAndView("vehicles/edit", bindingResult.getModel());
@@ -164,9 +167,9 @@ public class VehicleController {
 
     @PostMapping("/delete/{id}")
     public ModelAndView deleteVehicle(@PathVariable UUID id,
-                                      HttpSession session) {
+                                      @AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         vehicleService.deleteVehicle(id, userId);
 

@@ -7,13 +7,14 @@ import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import bg.softuni.parkzone.service.parkinglot.ParkingLotService;
 import bg.softuni.parkzone.service.parkingspot.ParkingSpotService;
 import bg.softuni.parkzone.service.reservation.ReservationService;
 import bg.softuni.parkzone.service.user.UserService;
 import bg.softuni.parkzone.service.vehicle.VehicleService;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -43,11 +44,11 @@ public class ReservationController {
     }
 
     @GetMapping
-    public ModelAndView getReservationsByOwner(HttpSession session) {
+    public ModelAndView getReservationsByOwner(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
         reservationService.completeExpiredReservations();
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         UserDTO user = userService.findById(userId);
 
@@ -62,9 +63,10 @@ public class ReservationController {
     }
 
     @GetMapping("/create")
-    public ModelAndView getCreateReservationPage(HttpSession session) {
+    public ModelAndView getCreateReservationPage(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UserDTO user = userService.findById((UUID) session.getAttribute("user_id"));
+        UUID userId = principal.getId();
+        UserDTO user = userService.findById(userId);
 
         List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(user.getId());
         List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
@@ -86,9 +88,9 @@ public class ReservationController {
     public ModelAndView createReservation(
             @Valid @ModelAttribute("reservationCreateRequestDTO") ReservationCreateRequestDTO reservationCreateRequestDTO,
             BindingResult bindingResult,
-            HttpSession session) {
+            @AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
         UserDTO user = userService.findById(userId);
 
         if (bindingResult.hasErrors()) {
@@ -157,10 +159,10 @@ public class ReservationController {
 
     @PostMapping("/cancel/{id}")
     public ModelAndView cancelReservation(@PathVariable UUID id,
-                                          HttpSession session,
+                                          @AuthenticationPrincipal AuthenticationUserDetails principal,
                                           RedirectAttributes redirectAttributes) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         try {
             reservationService.cancelReservationByUser(id, userId);
@@ -174,10 +176,10 @@ public class ReservationController {
 
     @GetMapping("/edit/{id}")
     public ModelAndView getEditReservationPage(@PathVariable UUID id,
-                                               HttpSession session,
+                                               @AuthenticationPrincipal AuthenticationUserDetails principal,
                                                RedirectAttributes redirectAttributes) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
         UserDTO user = userService.findById(userId);
 
         try {
@@ -212,9 +214,9 @@ public class ReservationController {
             @PathVariable UUID id,
             @Valid @ModelAttribute("reservationEditRequestDTO") ReservationEditRequestDTO reservationEditRequestDTO,
             BindingResult bindingResult,
-            HttpSession session) {
+            @AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
         UserDTO user = userService.findById(userId);
 
         boolean reservationStarted = reservationService.isReservationStarted(id, userId);

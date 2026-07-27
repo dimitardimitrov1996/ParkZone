@@ -2,7 +2,6 @@ package bg.softuni.parkzone.service.user;
 
 import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
-import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
@@ -14,12 +13,9 @@ import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -39,7 +35,6 @@ public class UserService {
 
 
     public UserDTO register(UserRegisterRequestDTO userRegisterRequestDTO) {
-
 
         userRepository.findByUsername(userRegisterRequestDTO.getUsername()).ifPresent(user -> {
                 throw new BusinessRuleException("Account with this username already exists");
@@ -72,33 +67,6 @@ public class UserService {
                 .build();
     }
 
-    public UserDTO login(@Valid UserLoginRequestDTO userLoginRequestDTO) {
-
-        Optional<User> existingUser = userRepository.findByEmail(userLoginRequestDTO.getEmail());
-
-        if(existingUser.isEmpty() ||
-                !passwordEncoder.matches(userLoginRequestDTO.getPassword(), existingUser.get().getPassword())) {
-            throw new BusinessRuleException("Invalid credentials, please try again");
-        }
-
-        User user = existingUser.get();
-
-        if (!user.isActive()) {
-            throw new BusinessRuleException("Your account is inactive. Please contact an administrator.");
-        }
-
-        return UserDTO.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .phoneNumber(user.getPhoneNumber())
-                .isActive(user.isActive())
-                .build();
-    }
-
     public UserDTO findById(UUID userId) {
         User user = userRepository.findById(userId).orElseThrow(()
                 -> new BusinessRuleException("User not found"));
@@ -113,14 +81,6 @@ public class UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .isActive(user.isActive())
                 .build();
-    }
-
-    public boolean isAdmin(UUID userId) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessRuleException("User not found"));
-
-        return user.getRole() == UserRole.ADMIN && user.isActive();
     }
 
     public List<User> getAllUsers() {

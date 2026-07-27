@@ -3,18 +3,18 @@ package bg.softuni.parkzone.web;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
+import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import bg.softuni.parkzone.service.user.UserService;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.util.UUID;
 
 @Controller
 public class IndexController {
@@ -31,39 +31,22 @@ public class IndexController {
     }
 
     @GetMapping("/login")
-    public ModelAndView getLoginPage(Model model) {
+    public ModelAndView getLoginPage(@RequestParam(required = false) String error,
+                                     @RequestParam(required = false) String disabled,
+                                     Model model) {
 
         model.addAttribute("userLoginRequestDTO", UserLoginRequestDTO.builder().build());
 
-        return new ModelAndView("login");
-    }
+        ModelAndView modelAndView = new ModelAndView("login");
 
-    @PostMapping("/login")
-    public ModelAndView  login(@ModelAttribute("userLoginRequestDTO")
-                                   @Valid UserLoginRequestDTO userLoginRequestDTO,
-                               BindingResult bindingResult, HttpSession httpSession) {
-
-
-        if (bindingResult.hasErrors()) {
-            return new ModelAndView("login", bindingResult.getModel());
+        if (disabled != null) {
+            modelAndView.addObject("loginError", "Your account is inactive. Please contact an administrator.");
+        } else if (error != null) {
+            modelAndView.addObject("loginError", "Invalid email or password");
         }
 
-        try {
-            UserDTO user = userService.login(userLoginRequestDTO);
-            httpSession.setAttribute("user_id", user.getId());
-
-            if (userService.isAdmin(user.getId())) {
-                return new ModelAndView("redirect:/admin");
-            }
-
-            return new ModelAndView("redirect:/home");
-
-        } catch (IllegalArgumentException e) {
-            bindingResult.reject("loginError", e.getMessage());
-            return new ModelAndView("login", bindingResult.getModel());
-        }
+        return modelAndView;
     }
-
 
     @GetMapping("/register")
     public ModelAndView getRegisterPage(Model model) {
@@ -75,11 +58,11 @@ public class IndexController {
 
     @PostMapping("/register")
     public ModelAndView register(@ModelAttribute("userRegisterRequestDTO")
-                                     @Valid UserRegisterRequestDTO userRegisterRequestDTO,
+                                 @Valid UserRegisterRequestDTO userRegisterRequestDTO,
                                  BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-            return  new ModelAndView("register");
+            return new ModelAndView("register", bindingResult.getModel());
         }
 
         try {
@@ -102,24 +85,15 @@ public class IndexController {
         return new ModelAndView("redirect:/login");
     }
 
-
-    @GetMapping("/logout")
-    public ModelAndView getLogoutPage(HttpSession httpSession) {
-        httpSession.invalidate();
-        return new ModelAndView("redirect:/");
-    }
-
     @GetMapping("/home")
-    public ModelAndView getHomePage(HttpSession httpSession) {
+    public ModelAndView getHomePage(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UserDTO user = userService.findById((UUID) httpSession.getAttribute("user_id"));
+        UserDTO user = userService.findById(principal.getId());
 
         ModelAndView modelAndView = new ModelAndView("home");
         modelAndView.addObject("user", user);
 
         return modelAndView;
     }
-
-
 
 }

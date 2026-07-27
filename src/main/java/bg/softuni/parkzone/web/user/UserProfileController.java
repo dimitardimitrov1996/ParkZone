@@ -1,9 +1,10 @@
 package bg.softuni.parkzone.web.user;
 
 import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
+import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import bg.softuni.parkzone.service.user.UserService;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,9 +26,9 @@ public class UserProfileController {
     }
 
     @GetMapping()
-    public ModelAndView getProfilePage(HttpSession session) {
+    public ModelAndView getProfilePage(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         UserProfileUpdateRequestDTO profileDTO = userService.getUserProfileData(userId);
 
@@ -41,14 +42,14 @@ public class UserProfileController {
     public ModelAndView updateProfile(
             @Valid @ModelAttribute("userProfileUpdateRequestDTO") UserProfileUpdateRequestDTO userProfileUpdateRequestDTO,
             BindingResult bindingResult,
-            HttpSession session,
+            @AuthenticationPrincipal AuthenticationUserDetails principal,
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
             return new ModelAndView("user/profile", bindingResult.getModel());
         }
 
-        UUID userId = (UUID) session.getAttribute("user_id");
+        UUID userId = principal.getId();
 
         userService.updateUserProfile(userId, userProfileUpdateRequestDTO);
 
