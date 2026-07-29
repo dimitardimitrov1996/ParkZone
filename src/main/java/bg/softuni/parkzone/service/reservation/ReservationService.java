@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.service.reservation;
 
 import bg.softuni.parkzone.exception.BusinessRuleException;
+import bg.softuni.parkzone.model.dto.billing.CreateInvoiceRequest;
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
@@ -18,6 +19,7 @@ import bg.softuni.parkzone.repository.parkingspot.ParkingSpotRepository;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
+import bg.softuni.parkzone.service.billing.client.BillingClient;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -35,13 +37,15 @@ public class ReservationService {
     private final VehicleRepository vehicleRepository;
     private final ParkingLotRepository parkingLotRepository;
     private final ParkingSpotRepository parkingSpotRepository;
+    private final BillingClient billingClient;
 
-    public ReservationService(ReservationRepository reservationRepository, UserRepository userRepository, VehicleRepository vehicleRepository, ParkingLotRepository parkingLotRepository, ParkingSpotRepository parkingSpotRepository) {
+    public ReservationService(ReservationRepository reservationRepository, UserRepository userRepository, VehicleRepository vehicleRepository, ParkingLotRepository parkingLotRepository, ParkingSpotRepository parkingSpotRepository, BillingClient billingClient) {
         this.reservationRepository = reservationRepository;
         this.userRepository = userRepository;
         this.vehicleRepository = vehicleRepository;
         this.parkingLotRepository = parkingLotRepository;
         this.parkingSpotRepository = parkingSpotRepository;
+        this.billingClient = billingClient;
     }
 
 
@@ -142,7 +146,17 @@ public class ReservationService {
                 .createdOn(LocalDateTime.now())
                 .build();
 
-        reservationRepository.save(reservation);
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        CreateInvoiceRequest invoiceRequest = CreateInvoiceRequest.builder()
+                .reservationId(savedReservation.getId())
+                .userId(user.getId())
+                .amount(savedReservation.getTotalPrice())
+                .currency("EUR")
+                .build();
+
+        billingClient.createInvoice(invoiceRequest);
+
     }
 
     private void validateReservationPeriod(LocalDateTime startDate,
