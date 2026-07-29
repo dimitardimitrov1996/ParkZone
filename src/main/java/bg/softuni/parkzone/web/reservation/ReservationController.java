@@ -2,6 +2,7 @@ package bg.softuni.parkzone.web.reservation;
 
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
+import bg.softuni.parkzone.model.dto.reservation.ReservationViewDTO;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
@@ -52,12 +53,13 @@ public class ReservationController {
 
         UserDTO user = userService.findById(userId);
 
-        List<Reservation> reservations = reservationService.getReservationsByUserId(userId);
+        List<ReservationViewDTO> reservationViews =
+                reservationService.getReservationViewsByUserId(userId);
 
         ModelAndView modelAndView = new ModelAndView("reservations/list");
 
         modelAndView.addObject("user", user);
-        modelAndView.addObject("reservations", reservations);
+        modelAndView.addObject("reservationViews", reservationViews);
 
         return modelAndView;
     }

@@ -2,8 +2,10 @@ package bg.softuni.parkzone.service.reservation;
 
 import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.billing.CreateInvoiceRequest;
+import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
+import bg.softuni.parkzone.model.dto.reservation.ReservationViewDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
@@ -449,6 +451,21 @@ public class ReservationService {
         }
 
         reservationRepository.saveAll(expiredReservations);
+    }
+
+    public List<ReservationViewDTO> getReservationViewsByUserId(UUID userId) {
+
+        return reservationRepository.findAllByUserId(userId)
+                .stream()
+                .map(reservation -> {
+                    InvoiceResponse invoice = billingClient.getInvoiceByReservationId(reservation.getId());
+
+                    return ReservationViewDTO.builder()
+                            .reservation(reservation)
+                            .invoiceStatus(invoice.getStatus())
+                            .build();
+                })
+                .toList();
     }
 
 }
