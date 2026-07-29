@@ -243,7 +243,9 @@ public class ReservationService {
 
         reservation.setStatus(ReservationStatus.CANCELLED);
 
-        reservationRepository.save(reservation);
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        billingClient.cancelInvoiceByReservationId(savedReservation.getId());
     }
 
     public void cancelReservationByUser(UUID reservationId, UUID userId) {
@@ -261,7 +263,10 @@ public class ReservationService {
 
         reservation.setStatus(ReservationStatus.CANCELLED);
 
-        reservationRepository.save(reservation);
+        Reservation savedReservation = reservationRepository.save(reservation);
+
+        billingClient.cancelInvoiceByReservationId(savedReservation.getId());
+
     }
 
     public ReservationEditRequestDTO getReservationForEdit(UUID reservationId, UUID userId) {
