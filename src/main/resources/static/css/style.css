@@ -270,3 +270,33 @@ tr:hover {
     border-radius: 10px;
     margin-top: 15px;
 }
+
+.action-stack div {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.action-stack .action-form {
+    display: block;
+    margin: 0;
+}
+
+.action-stack .link-button {
+    display: inline;
+}
+
+.invoice-summary {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f7f7fb;
+    border-radius: 8px;
+}
+
+.invoice-summary h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.invoice-summary p {
+    margin: 8px 0;
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pay Invoice</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone</strong></div>
+    <div>
+        <a href="/reservations">Back to Reservations</a>
+        <a href="/home">Home</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Pay Invoice</h2>
+
+        <div class="invoice-summary">
+
+            <h3>Invoice Details</h3>
+
+            <p><strong>Invoice ID:</strong> <span th:text="${invoice.id}"></span></p>
+            <p><strong>Invoice Status:</strong> <span th:text="${invoice.status}"></span></p>
+            <p><strong>Amount:</strong> <span th:text="${invoice.amount + ' ' + invoice.currency}"></span></p>
+
+            <h3>Reservation Details</h3>
+
+            <p>
+                <strong>Vehicle:</strong>
+                <span th:text="${reservation.vehicle.brand + ' ' + reservation.vehicle.model + ' (' + reservation.vehicle.registrationNumber + ')'}"></span>
+            </p>
+
+            <p>
+                <strong>Parking Lot:</strong>
+                <span th:text="${reservation.parkingLot.name}"></span>
+            </p>
+
+            <p>
+                <strong>Parking Spot:</strong>
+                <span th:text="${reservation.parkingSpot.spotNumber}"></span>
+            </p>
+
+            <p>
+                <strong>Reservation Type:</strong>
+                <span th:text="${reservation.reservationType}"></span>
+            </p>
+
+            <p>
+                <strong>Period:</strong>
+                <span th:text="${#temporals.format(reservation.startDate, 'dd.MM.yyyy HH:mm')}"></span>
+                -
+                <span th:text="${#temporals.format(reservation.endDate, 'dd.MM.yyyy HH:mm')}"></span>
+            </p>
+
+        </div>
+
+        <form th:action="@{/payments/reservation/{id}(id=${reservationId})}"
+              th:object="${paymentRequestDTO}"
+              method="post">
+
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+
+            <div class="error"
+                 th:if="${#fields.hasGlobalErrors()}"
+                 th:each="err : ${#fields.globalErrors()}"
+                 th:text="${err}">
+            </div>
+
+            <div class="form-group">
+                <label>Card Holder Name</label>
+                <input type="text" th:field="*{cardHolderName}">
+                <div class="error"
+                     th:if="${#fields.hasErrors('cardHolderName')}"
+                     th:errors="*{cardHolderName}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Card Number</label>
+                <input type="text"
+                       th:field="*{cardNumber}"
+                       maxlength="16"
+                       inputmode="numeric">
+                <div class="error"
+                     th:if="${#fields.hasErrors('cardNumber')}"
+                     th:errors="*{cardNumber}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Expiration Date</label>
+                <input type="text"
+                       th:field="*{expirationDate}"
+                       placeholder="MM/YY"
+                       maxlength="5">
+                <div class="error"
+                     th:if="${#fields.hasErrors('expirationDate')}"
+                     th:errors="*{expirationDate}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>CVV</label>
+                <input type="password"
+                       th:field="*{cvv}"
+                       maxlength="3"
+                       inputmode="numeric">
+                <div class="error"
+                     th:if="${#fields.hasErrors('cvv')}"
+                     th:errors="*{cvv}">
+                </div>
+            </div>
+
+            <button class="btn" type="submit">Pay Invoice</button>
+            <a href="/reservations" class="btn-secondary">Cancel</a>
+
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>

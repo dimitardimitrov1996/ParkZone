@@ -462,6 +462,7 @@ public class ReservationService {
 
                     return ReservationViewDTO.builder()
                             .reservation(reservation)
+                            .invoiceId(invoice.getId())
                             .invoiceStatus(invoice.getStatus())
                             .build();
                 })

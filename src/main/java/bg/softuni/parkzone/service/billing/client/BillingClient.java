@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.service.billing.client;
 
+import bg.softuni.parkzone.config.BillingFeignConfiguration;
 import bg.softuni.parkzone.model.dto.billing.CreateInvoiceRequest;
 import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -9,7 +10,8 @@ import java.util.UUID;
 
 @FeignClient(
         name = "billing-service",
-        url = "http://localhost:8081/api/v1/invoices"
+        url = "${billing.service.base.url}",
+        configuration = BillingFeignConfiguration.class
 )
 public interface BillingClient {
 
