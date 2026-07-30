@@ -166,4 +166,23 @@ public class UserService {
         return value.trim();
     }
 
+    public void changeUserRole(UUID targetUserId, UUID currentAdminId) {
+
+        if (targetUserId.equals(currentAdminId)) {
+            throw new BusinessRuleException("You cannot change your own role");
+        }
+
+        User user = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new BusinessRuleException("User not found"));
+
+        if (user.getRole() == UserRole.ADMIN) {
+            user.setRole(UserRole.USER);
+        } else {
+            user.setRole(UserRole.ADMIN);
+        }
+
+        userRepository.save(user);
+    }
+
+
 }

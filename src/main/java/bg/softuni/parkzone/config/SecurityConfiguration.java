@@ -1,6 +1,5 @@
 package bg.softuni.parkzone.config;
 
-import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +8,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
@@ -38,7 +36,7 @@ public class SecurityConfiguration {
                             .loginProcessingUrl("/login")
                             .usernameParameter("email")
                             .passwordParameter("password")
-                            .successHandler(authenticationSuccessHandler())
+                            .defaultSuccessUrl("/home", true)
                             .failureHandler(authenticationFailureHandler())
                             .permitAll()
                     )
@@ -51,22 +49,6 @@ public class SecurityConfiguration {
 
             return http.build();
         }
-    @Bean
-    public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return (request, response, authentication) -> {
-
-            AuthenticationUserDetails principal =
-                    (AuthenticationUserDetails) authentication.getPrincipal();
-
-            if (principal.getAuthorities().stream()
-                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"))) {
-                response.sendRedirect("/admin");
-                return;
-            }
-
-            response.sendRedirect("/home");
-        };
-    }
 
     @Bean
     public AuthenticationFailureHandler authenticationFailureHandler() {

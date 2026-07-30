@@ -47,12 +47,13 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public ModelAndView getUsersPage() {
+    public ModelAndView getUsersPage(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
         List<User> users = userService.getAllUsers();
 
         ModelAndView modelAndView = new ModelAndView("admin/users");
         modelAndView.addObject("users", users);
+        modelAndView.addObject("currentAdminId", principal.getId());
 
         return modelAndView;
     }
@@ -208,6 +209,21 @@ public class AdminController {
         }
 
         return new ModelAndView("redirect:/admin/vehicles");
+    }
+
+    @PostMapping("/users/change-role/{id}")
+    public ModelAndView changeUserRole(@PathVariable UUID id,
+                                       @AuthenticationPrincipal AuthenticationUserDetails principal,
+                                       RedirectAttributes redirectAttributes) {
+
+        try {
+            userService.changeUserRole(id, principal.getId());
+            redirectAttributes.addFlashAttribute("successMessage", "User role changed successfully");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return new ModelAndView("redirect:/admin/users");
     }
 
 

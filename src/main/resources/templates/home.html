@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Home</title>
@@ -10,6 +11,7 @@
 <div class="navbar">
     <div><strong>ParkZone Home</strong></div>
     <div>
+        <a sec:authorize="hasRole('ADMIN')" href="/admin">Admin Panel</a>
         <a href="/vehicles">Vehicles</a>
         <a href="/reservations">Reservations</a>
         <a href="/profile">Profile</a>
