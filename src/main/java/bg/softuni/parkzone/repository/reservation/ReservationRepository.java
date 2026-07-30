@@ -17,16 +17,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     List<Reservation> findAllByUserId(UUID userId);
 
-    boolean existsByParkingSpotIdAndStatusAndStartDateBeforeAndEndDateAfter(
+    boolean existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
             UUID parkingSpotId,
-            ReservationStatus status,
+            List<ReservationStatus> statuses,
             LocalDateTime endDate,
             LocalDateTime startDate
     );
 
-    boolean existsByVehicleIdAndStatusAndStartDateBeforeAndEndDateAfter(
+    boolean existsByVehicleIdAndStatusInAndStartDateBeforeAndEndDateAfter(
             UUID vehicleId,
-            ReservationStatus status,
+            List<ReservationStatus> statuses,
             LocalDateTime endDate,
             LocalDateTime startDate
     );
@@ -37,21 +37,28 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     List<Reservation> findAllByVehicleIdAndStatus(UUID vehicleId, ReservationStatus status);
 
-    boolean existsByParkingSpotIdAndStatusAndIdNotAndStartDateBeforeAndEndDateAfter(
+    boolean existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
             UUID parkingSpotId,
-            ReservationStatus status,
+            List<ReservationStatus> statuses,
             UUID reservationId,
             LocalDateTime endDate,
             LocalDateTime startDate
     );
 
-    boolean existsByVehicleIdAndStatusAndIdNotAndStartDateBeforeAndEndDateAfter(
+    boolean existsByVehicleIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
             UUID vehicleId,
-            ReservationStatus status,
+            List<ReservationStatus> statuses,
             UUID reservationId,
             LocalDateTime endDate,
             LocalDateTime startDate
     );
 
     List<Reservation> findAllByStatusAndEndDateBefore(ReservationStatus reservationStatus, LocalDateTime endDate);
+
+    List<Reservation> findAllByStatusAndStartDateBefore(
+            ReservationStatus reservationStatus,
+            LocalDateTime startDate
+    );
+
+
 }

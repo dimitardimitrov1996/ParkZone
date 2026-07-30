@@ -93,9 +93,9 @@ public class ReservationService {
         );
 
         boolean parkingSpotIsTaken =
-                reservationRepository.existsByParkingSpotIdAndStatusAndStartDateBeforeAndEndDateAfter(
+                reservationRepository.existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
                         parkingSpot.getId(),
-                        ReservationStatus.ACTIVE,
+                        getOccupyingStatuses(),
                         dto.getEndDate(),
                         dto.getStartDate()
                 );
@@ -105,9 +105,9 @@ public class ReservationService {
         }
 
         boolean vehicleAlreadyReserved =
-                reservationRepository.existsByVehicleIdAndStatusAndStartDateBeforeAndEndDateAfter(
+                reservationRepository.existsByVehicleIdAndStatusInAndStartDateBeforeAndEndDateAfter(
                         vehicle.getId(),
-                        ReservationStatus.ACTIVE,
+                        getOccupyingStatuses(),
                         dto.getEndDate(),
                         dto.getStartDate()
                 );
@@ -138,7 +138,7 @@ public class ReservationService {
                 .endDate(dto.getEndDate())
                 .disabledParkingSpotRequired(parkingSpot.isDisabledSpot())
                 .electricChargingRequired(parkingSpot.isElectricChargingSpot())
-                .status(ReservationStatus.ACTIVE)
+                .status(ReservationStatus.PENDING_PAYMENT)
                 .totalPrice(calculatePrice(
                         dto.getReservationType(),
                         dto.getStartDate(),
@@ -239,8 +239,8 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
 
-        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new BusinessRuleException("Only active reservations can be cancelled");
+        if (!canManageReservation(reservation)) {
+            throw new BusinessRuleException("Only active or pending payment reservations can be cancelled");
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
@@ -259,8 +259,8 @@ public class ReservationService {
             throw new BusinessRuleException("You cannot cancel this reservation");
         }
 
-        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new BusinessRuleException("Only active reservations can be cancelled");
+        if (!canManageReservation(reservation)) {
+            throw new BusinessRuleException("Only active or pending payment reservations can be cancelled");
         }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
@@ -280,8 +280,8 @@ public class ReservationService {
             throw new BusinessRuleException("You cannot edit this reservation");
         }
 
-        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new BusinessRuleException("Only active reservations can be edited");
+        if (!canManageReservation(reservation)) {
+            throw new BusinessRuleException("Only active or pending payment reservations can be edited");
         }
 
         return ReservationEditRequestDTO.builder()
@@ -303,8 +303,8 @@ public class ReservationService {
             throw new BusinessRuleException("You cannot edit this reservation");
         }
 
-        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
-            throw new BusinessRuleException("Only active reservations can be edited");
+        if (!canManageReservation(reservation)) {
+            throw new BusinessRuleException("Only active or pending payment reservations can be edited");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -369,9 +369,9 @@ public class ReservationService {
         }
 
         boolean parkingSpotIsTaken =
-                reservationRepository.existsByParkingSpotIdAndStatusAndIdNotAndStartDateBeforeAndEndDateAfter(
+                reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
                         parkingSpot.getId(),
-                        ReservationStatus.ACTIVE,
+                        getOccupyingStatuses(),
                         reservationId,
                         dto.getEndDate(),
                         dto.getStartDate()
@@ -382,9 +382,9 @@ public class ReservationService {
         }
 
         boolean vehicleAlreadyReserved =
-                reservationRepository.existsByVehicleIdAndStatusAndIdNotAndStartDateBeforeAndEndDateAfter(
+                reservationRepository.existsByVehicleIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
                         vehicle.getId(),
-                        ReservationStatus.ACTIVE,
+                        getOccupyingStatuses(),
                         reservationId,
                         dto.getEndDate(),
                         dto.getStartDate()
@@ -468,5 +468,36 @@ public class ReservationService {
                 })
                 .toList();
     }
+
+    private boolean canManageReservation(Reservation reservation) {
+        return reservation.getStatus() == ReservationStatus.ACTIVE
+                || reservation.getStatus() == ReservationStatus.PENDING_PAYMENT;
+    }
+
+
+    private List<ReservationStatus> getOccupyingStatuses() {
+        return List.of(
+                ReservationStatus.ACTIVE,
+                ReservationStatus.PENDING_PAYMENT
+        );
+    }
+
+    @Transactional
+    public void cancelExpiredPendingPaymentReservations() {
+
+        List<Reservation> unpaidReservations =
+                reservationRepository.findAllByStatusAndStartDateBefore(
+                        ReservationStatus.PENDING_PAYMENT,
+                        LocalDateTime.now()
+                );
+
+        for (Reservation reservation : unpaidReservations) {
+            reservation.setStatus(ReservationStatus.CANCELLED);
+            billingClient.cancelInvoiceByReservationId(reservation.getId());
+        }
+
+        reservationRepository.saveAll(unpaidReservations);
+    }
+
 
 }

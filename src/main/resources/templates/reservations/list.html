@@ -72,6 +72,12 @@
                     </td>
 
                     <td>
+
+                        <span th:if="${r.status.name() == 'PENDING_PAYMENT'}"
+                              class="status-completed">
+                            PENDING PAYMENT
+                        </span>
+
 						<span th:if="${r.status.name() == 'ACTIVE'}"
                               class="status-active">
 							ACTIVE
@@ -102,21 +108,21 @@
                         <div class="action-stack">
 
                             <div>
-                                <a th:if="${r.status.name() == 'ACTIVE' && view.invoiceStatus == 'PENDING'}"
+                                <a th:if="${r.status.name() == 'PENDING_PAYMENT' && view.invoiceStatus == 'PENDING'}"
                                    th:href="@{/payments/reservation/{id}(id=${r.id})}">
                                     Pay
                                 </a>
                             </div>
 
                             <div>
-                                <a th:if="${r.status.name() == 'ACTIVE'}"
+                                <a th:if="${r.status.name() == 'ACTIVE' || r.status.name() == 'PENDING_PAYMENT'}"
                                    th:href="@{/reservations/edit/{id}(id=${r.id})}">
                                     Edit
                                 </a>
                             </div>
 
                             <div>
-                                <form th:if="${r.status.name() == 'ACTIVE'}"
+                                <form th:if="${r.status.name() == 'ACTIVE' || r.status.name() == 'PENDING_PAYMENT'}"
                                       th:action="@{/reservations/cancel/{id}(id=${r.id})}"
                                       method="post"
                                       class="action-form">
@@ -133,7 +139,7 @@
                                 </form>
                             </div>
 
-                            <div th:unless="${r.status.name() == 'ACTIVE'}">
+                            <div th:if="${r.status.name() != 'ACTIVE' && r.status.name() != 'PENDING_PAYMENT'}">
                                 —
                             </div>
 

@@ -54,6 +54,8 @@ public class PaymentService {
         }
 
         billingClient.payInvoice(invoice.getId());
+        reservation.setStatus(ReservationStatus.ACTIVE);
+        reservationRepository.save(reservation);
     }
 
     private Reservation getPayableReservation(UUID reservationId, UUID userId) {
@@ -65,7 +67,7 @@ public class PaymentService {
             throw new BusinessRuleException("You cannot pay this reservation");
         }
 
-        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
+        if (!canManageReservation(reservation)) {
             throw new BusinessRuleException("Only active reservations can be paid");
         }
 
@@ -93,6 +95,11 @@ public class PaymentService {
 
     public Reservation getReservationForPayment(UUID reservationId, UUID userId) {
         return getPayableReservation(reservationId, userId);
+    }
+
+    private boolean canManageReservation(Reservation reservation) {
+        return reservation.getStatus() == ReservationStatus.ACTIVE
+                || reservation.getStatus() == ReservationStatus.PENDING_PAYMENT;
     }
 
 }
