@@ -300,3 +300,8 @@ tr:hover {
 .invoice-summary p {
     margin: 8px 0;
 }
+
+.status-warning {
+    color: #777;
+    font-weight: 700;
+}

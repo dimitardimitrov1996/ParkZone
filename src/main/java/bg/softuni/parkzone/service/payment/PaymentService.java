@@ -2,12 +2,15 @@ package bg.softuni.parkzone.service.payment;
 
 
 import bg.softuni.parkzone.exception.BusinessRuleException;
+import bg.softuni.parkzone.exception.billing.BillingServiceUnavailableException;
+import bg.softuni.parkzone.exception.reservation.ReservationNotFoundException;
 import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
 import bg.softuni.parkzone.model.dto.payment.PaymentRequestDTO;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.service.billing.client.BillingClient;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,13 +33,17 @@ public class PaymentService {
 
         Reservation reservation = getPayableReservation(reservationId, userId);
 
-        InvoiceResponse invoice = billingClient.getInvoiceByReservationId(reservation.getId());
+            InvoiceResponse invoice;
 
-        if (!"PENDING".equals(invoice.getStatus())) {
-            throw new BusinessRuleException("Only pending invoices can be paid");
+        try {
+            invoice = billingClient.getInvoiceByReservationId(reservation.getId());
+        } catch (FeignException e) {
+            throw new BillingServiceUnavailableException();
         }
-
-        return invoice;
+            if (!"PENDING".equals(invoice.getStatus())) {
+                throw new BusinessRuleException("Only pending invoices can be paid");
+            }
+            return invoice;
     }
 
     public void payReservationInvoice(UUID reservationId,
@@ -47,13 +54,24 @@ public class PaymentService {
 
         Reservation reservation = getPayableReservation(reservationId, userId);
 
-        InvoiceResponse invoice = billingClient.getInvoiceByReservationId(reservation.getId());
+        InvoiceResponse invoice;
+
+        try {
+            invoice = billingClient.getInvoiceByReservationId(reservation.getId());
+        } catch (FeignException e) {
+            throw new BillingServiceUnavailableException();
+        }
 
         if (!"PENDING".equals(invoice.getStatus())) {
             throw new BusinessRuleException("Only pending invoices can be paid");
         }
 
-        billingClient.payInvoice(invoice.getId());
+        try {
+            billingClient.payInvoice(invoice.getId());
+        } catch (FeignException e) {
+            throw new BillingServiceUnavailableException();
+        }
+
         reservation.setStatus(ReservationStatus.ACTIVE);
         reservationRepository.save(reservation);
     }
@@ -61,14 +79,14 @@ public class PaymentService {
     private Reservation getPayableReservation(UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
+                .orElseThrow(() -> new ReservationNotFoundException(reservationId));
 
         if (!reservation.getUser().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot pay this reservation");
         }
 
-        if (!canManageReservation(reservation)) {
-            throw new BusinessRuleException("Only active reservations can be paid");
+        if (!canPayReservation(reservation)) {
+            throw new BusinessRuleException("Only reservations with pending payment can be paid");
         }
 
         return reservation;
@@ -97,9 +115,8 @@ public class PaymentService {
         return getPayableReservation(reservationId, userId);
     }
 
-    private boolean canManageReservation(Reservation reservation) {
-        return reservation.getStatus() == ReservationStatus.ACTIVE
-                || reservation.getStatus() == ReservationStatus.PENDING_PAYMENT;
+    private boolean canPayReservation(Reservation reservation) {
+        return reservation.getStatus() == ReservationStatus.PENDING_PAYMENT;
     }
 
 }

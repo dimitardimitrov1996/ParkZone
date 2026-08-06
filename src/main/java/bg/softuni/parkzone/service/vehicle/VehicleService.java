@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.service.vehicle;
 
 import bg.softuni.parkzone.exception.BusinessRuleException;
+import bg.softuni.parkzone.exception.vehicle.VehicleNotFoundException;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
@@ -65,13 +66,13 @@ public class VehicleService {
 
     public Vehicle findById(UUID id) {
         return vehicleRepository.findById(id)
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(id));
     }
 
     public void editVehicle(VehicleEditDTO request, UUID id, UUID userId) {
 
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(id));
 
         if (!vehicle.getOwner().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot edit this vehicle");
@@ -125,7 +126,7 @@ public class VehicleService {
     public VehicleEditDTO getVehicleForEdit(UUID id, UUID userId) {
 
         Vehicle vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(id));
 
         if (!vehicle.getOwner().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot edit this vehicle");
@@ -144,7 +145,7 @@ public class VehicleService {
     public void deleteVehicle(UUID vehicleId, UUID userId) {
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(vehicleId));
 
         if (!vehicle.getOwner().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot delete this vehicle");
@@ -174,7 +175,7 @@ public class VehicleService {
     public void deleteVehicleByAdmin(UUID vehicleId) {
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(vehicleId));
 
         if (!vehicle.isActive()) {
             throw new BusinessRuleException("Vehicle is already deleted");
@@ -196,7 +197,7 @@ public class VehicleService {
     public void activateVehicleByAdmin(UUID vehicleId) {
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(vehicleId));
 
         if (vehicle.isActive()) {
             throw new BusinessRuleException("Vehicle is already active");

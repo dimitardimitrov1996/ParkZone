@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>ParkZone</strong></div>
+    <div>
+        <a href="/home">Home</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+
+        <h2 th:text="${errorCode + ' - ' + title}">500 - Error</h2>
+
+        <p th:text="${message}">
+            Something went wrong.
+        </p>
+
+        <a href="/home" class="btn-secondary">Back to Home</a>
+    </div>
+</div>
+
+</body>
+</html>

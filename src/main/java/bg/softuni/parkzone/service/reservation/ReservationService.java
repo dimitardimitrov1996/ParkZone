@@ -1,6 +1,9 @@
 package bg.softuni.parkzone.service.reservation;
 
 import bg.softuni.parkzone.exception.BusinessRuleException;
+import bg.softuni.parkzone.exception.billing.BillingServiceUnavailableException;
+import bg.softuni.parkzone.exception.reservation.ReservationNotFoundException;
+import bg.softuni.parkzone.exception.vehicle.VehicleNotFoundException;
 import bg.softuni.parkzone.model.dto.billing.CreateInvoiceRequest;
 import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
@@ -22,6 +25,7 @@ import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
 import bg.softuni.parkzone.service.billing.client.BillingClient;
+import feign.FeignException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -55,13 +59,14 @@ public class ReservationService {
         return reservationRepository.findAllByUserId(userId);
     }
 
+    @Transactional
     public void createReservation(ReservationCreateRequestDTO dto, UUID userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessRuleException("User not found"));
 
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(dto.getVehicleId()));
 
         ParkingLot parkingLot = parkingLotRepository.findById(dto.getParkingLotId())
                 .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
@@ -157,7 +162,11 @@ public class ReservationService {
                 .currency("EUR")
                 .build();
 
-        billingClient.createInvoice(invoiceRequest);
+        try {
+            billingClient.createInvoice(invoiceRequest);
+        } catch (FeignException e) {
+            throw new BillingServiceUnavailableException();
+        }
 
     }
 
@@ -234,10 +243,11 @@ public class ReservationService {
         return reservationRepository.findAll();
     }
 
+    @Transactional
     public void cancelReservationByAdmin(UUID reservationId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
+                .orElseThrow(() -> new ReservationNotFoundException(reservationId));
 
         if (!canManageReservation(reservation)) {
             throw new BusinessRuleException("Only active or pending payment reservations can be cancelled");
@@ -247,13 +257,18 @@ public class ReservationService {
 
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        billingClient.cancelInvoiceByReservationId(savedReservation.getId());
+        try {
+            billingClient.cancelInvoiceByReservationId(savedReservation.getId());
+        } catch (FeignException e) {
+            throw new BillingServiceUnavailableException();
+        }
     }
 
+    @Transactional
     public void cancelReservationByUser(UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
+                .orElseThrow(() -> new ReservationNotFoundException(reservationId));
 
         if (!reservation.getUser().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot cancel this reservation");
@@ -267,14 +282,18 @@ public class ReservationService {
 
         Reservation savedReservation = reservationRepository.save(reservation);
 
-        billingClient.cancelInvoiceByReservationId(savedReservation.getId());
+        try {
+            billingClient.cancelInvoiceByReservationId(savedReservation.getId());
+        } catch (FeignException e) {
+            throw new BillingServiceUnavailableException();
+        }
 
     }
 
     public ReservationEditRequestDTO getReservationForEdit(UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
+                .orElseThrow(() -> new ReservationNotFoundException(reservationId));
 
         if (!reservation.getUser().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot edit this reservation");
@@ -294,10 +313,11 @@ public class ReservationService {
                 .build();
     }
 
+    @Transactional
     public void editReservation(ReservationEditRequestDTO dto, UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
+                .orElseThrow(() -> new ReservationNotFoundException(reservationId));
 
         if (!reservation.getUser().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot edit this reservation");
@@ -339,7 +359,7 @@ public class ReservationService {
         }
 
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
-                .orElseThrow(() -> new BusinessRuleException("Vehicle not found"));
+                .orElseThrow(() -> new VehicleNotFoundException(dto.getVehicleId()));
 
         if (!vehicle.getOwner().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot use this vehicle");
@@ -428,7 +448,7 @@ public class ReservationService {
     public boolean isReservationStarted(UUID reservationId, UUID userId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessRuleException("Reservation not found"));
+                .orElseThrow(() -> new ReservationNotFoundException(reservationId));
 
         if (!reservation.getUser().getId().equals(userId)) {
             throw new BusinessRuleException("You cannot edit this reservation");
@@ -458,13 +478,22 @@ public class ReservationService {
         return reservationRepository.findAllByUserId(userId)
                 .stream()
                 .map(reservation -> {
-                    InvoiceResponse invoice = billingClient.getInvoiceByReservationId(reservation.getId());
+                    try {
+                        InvoiceResponse invoice = billingClient.getInvoiceByReservationId(reservation.getId());
 
-                    return ReservationViewDTO.builder()
-                            .reservation(reservation)
-                            .invoiceId(invoice.getId())
-                            .invoiceStatus(invoice.getStatus())
-                            .build();
+                        return ReservationViewDTO.builder()
+                                .reservation(reservation)
+                                .invoiceId(invoice.getId())
+                                .invoiceStatus(invoice.getStatus())
+                                .build();
+
+                    } catch (FeignException e) {
+                        return ReservationViewDTO.builder()
+                                .reservation(reservation)
+                                .invoiceId(null)
+                                .invoiceStatus("UNAVAILABLE")
+                                .build();
+                    }
                 })
                 .toList();
     }
@@ -493,7 +522,11 @@ public class ReservationService {
 
         for (Reservation reservation : unpaidReservations) {
             reservation.setStatus(ReservationStatus.CANCELLED);
-            billingClient.cancelInvoiceByReservationId(reservation.getId());
+            try {
+                billingClient.cancelInvoiceByReservationId(reservation.getId());
+            } catch (FeignException e) {
+                throw new BillingServiceUnavailableException();
+            }
         }
 
         reservationRepository.saveAll(unpaidReservations);

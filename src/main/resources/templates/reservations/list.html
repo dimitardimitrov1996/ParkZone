@@ -95,11 +95,12 @@
                     </td>
 
                     <td>
-                    <span th:text="${view.invoiceStatus}"
-                    th:class="${view.invoiceStatus == 'PAID' ? 'status-active' :
-                    (view.invoiceStatus == 'PENDING' ? 'status-completed' :
-                    (view.invoiceStatus == 'REFUNDED' ? 'status-cancelled' : 'status-inactive'))}">
-                     </span>
+                   <span th:text="${view.invoiceStatus}"
+                         th:class="${view.invoiceStatus == 'PAID' ? 'status-active' :
+                          (view.invoiceStatus == 'PENDING' ? 'status-completed' :
+                          (view.invoiceStatus == 'UNAVAILABLE' ? 'status-warning' :
+                          (view.invoiceStatus == 'REFUNDED' ? 'status-cancelled' : 'status-inactive')))}">
+                   </span>
                     </td>
 
                     <td th:text="${r.totalPrice + ' EUR'}"></td>
