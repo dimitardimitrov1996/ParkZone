@@ -7,6 +7,8 @@ import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
 import bg.softuni.parkzone.repository.parkingspot.ParkingSpotRepository;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -26,6 +28,7 @@ public class ParkingSpotService {
         this.reservationRepository = reservationRepository;
     }
 
+    @Cacheable("activeParkingSpots")
     public List<ParkingSpot> getAllActiveParkingSpots() {
         return parkingSpotRepository.findAllByActiveTrue()
                 .stream()
@@ -35,6 +38,7 @@ public class ParkingSpotService {
                 )
                 .toList();
     }
+    @CacheEvict(value = {"activeParkingSpots", "parkingLots"}, allEntries = true)
     public UUID makeDisabledSpot(UUID parkingSpotId) {
         ParkingSpot parkingSpot = getParkingSpot(parkingSpotId);
         validateSpotCanBeChanged(parkingSpot);
@@ -48,6 +52,7 @@ public class ParkingSpotService {
         return parkingSpot.getParkingLot().getId();
     }
 
+    @CacheEvict(value = {"activeParkingSpots", "parkingLots"}, allEntries = true)
     public UUID makeElectricChargingSpot(UUID parkingSpotId) {
         ParkingSpot parkingSpot = getParkingSpot(parkingSpotId);
         validateSpotCanBeChanged(parkingSpot);
@@ -61,6 +66,7 @@ public class ParkingSpotService {
         return parkingSpot.getParkingLot().getId();
     }
 
+    @CacheEvict(value = {"activeParkingSpots", "parkingLots"}, allEntries = true)
     public UUID makeNormalSpot(UUID parkingSpotId) {
         ParkingSpot parkingSpot = getParkingSpot(parkingSpotId);
         validateSpotCanBeChanged(parkingSpot);
@@ -74,6 +80,7 @@ public class ParkingSpotService {
         return parkingSpot.getParkingLot().getId();
     }
 
+    @CacheEvict(value = {"activeParkingSpots", "parkingLots"}, allEntries = true)
     public UUID toggleActive(UUID parkingSpotId) {
         ParkingSpot parkingSpot = getParkingSpot(parkingSpotId);
 

@@ -3,6 +3,7 @@ package bg.softuni.parkzone.service.parkinglot;
 import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public class ParkingLotService {
         this.parkingLotRepository = parkingLotRepository;
     }
 
-
+    @Cacheable("parkingLots")
     public List<ParkingLot> getAllParkingLots() {
         return parkingLotRepository.findAll();
     }
