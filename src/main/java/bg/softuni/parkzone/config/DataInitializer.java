@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.config;
 
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
@@ -128,10 +129,10 @@ public class DataInitializer implements CommandLineRunner {
     private void initParkingSpots() {
 
         ParkingLot outdoorParking = parkingLotRepository.findByParkingType(ParkingType.OUTDOOR)
-                .orElseThrow(() -> new IllegalArgumentException("Outdoor parking not found"));
+                .orElseThrow(() -> new BusinessRuleException("Outdoor parking not found"));
 
         ParkingLot indoorParking = parkingLotRepository.findByParkingType(ParkingType.INDOOR)
-                .orElseThrow(() -> new IllegalArgumentException("Indoor parking not found"));
+                .orElseThrow(() -> new BusinessRuleException("Indoor parking not found"));
 
         createParkingSpots(outdoorParking);
         createParkingSpots(indoorParking);
@@ -170,7 +171,7 @@ public class DataInitializer implements CommandLineRunner {
     private void initDefaultVehicles() {
 
         User defaultUser = userRepository.findByEmail("user@abv.bg")
-                .orElseThrow(() -> new IllegalArgumentException("Default user not found"));
+                .orElseThrow(() -> new BusinessRuleException("Default user not found"));
 
         createVehicleIfNotExists(
                 "CA1234AA",
