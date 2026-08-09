@@ -13,12 +13,14 @@ import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -54,6 +56,7 @@ public class UserService {
                 .build();
 
         userRepository.save(user);
+        log.info("User [{}] registered with role [{}]", user.getId(), user.getRole());
 
         return UserDTO.builder()
                 .id(user.getId())
@@ -130,6 +133,8 @@ public class UserService {
         }
 
         userRepository.save(user);
+        log.info("Admin [{}] changed user [{}] active status to [{}]",
+                currentAdminId, userId, user.isActive());
     }
 
     public UserProfileUpdateRequestDTO getUserProfileData(UUID userId) {
@@ -156,6 +161,7 @@ public class UserService {
         user.setPhoneNumber(emptyToNull(dto.getPhoneNumber()));
 
         userRepository.save(user);
+        log.info("User [{}] updated profile", userId);
     }
 
     private String emptyToNull(String value) {
@@ -182,6 +188,8 @@ public class UserService {
         }
 
         userRepository.save(user);
+        log.info("Admin [{}] changed user [{}] role to [{}]",
+                currentAdminId, targetUserId, user.getRole());
     }
 
 

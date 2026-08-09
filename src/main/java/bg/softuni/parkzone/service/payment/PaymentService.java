@@ -11,12 +11,14 @@ import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.service.billing.client.BillingClient;
 import feign.FeignException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class PaymentService {
 
     private final ReservationRepository reservationRepository;
@@ -33,16 +35,18 @@ public class PaymentService {
 
         Reservation reservation = getPayableReservation(reservationId, userId);
 
-            InvoiceResponse invoice;
+        InvoiceResponse invoice;
 
         try {
             invoice = billingClient.getInvoiceByReservationId(reservation.getId());
         } catch (FeignException e) {
+            log.error("Billing service failed while loading invoice for reservation [{}]", reservation.getId(), e);
             throw new BillingServiceUnavailableException();
         }
             if (!"PENDING".equals(invoice.getStatus())) {
                 throw new BusinessRuleException("Only pending invoices can be paid");
             }
+            log.info("Invoice [{}] loaded for reservation payment [{}]", invoice.getId(), reservationId);
             return invoice;
     }
 
@@ -59,21 +63,25 @@ public class PaymentService {
         try {
             invoice = billingClient.getInvoiceByReservationId(reservation.getId());
         } catch (FeignException e) {
+            log.error("Billing service failed while loading invoice for payment. Reservation [{}]", reservation.getId(), e);
             throw new BillingServiceUnavailableException();
         }
 
         if (!"PENDING".equals(invoice.getStatus())) {
+            log.error("Invoice [{}] for reservation [{}] is not pending. Current status: {}", invoice.getId(), reservation.getId(), invoice.getStatus());
             throw new BusinessRuleException("Only pending invoices can be paid");
         }
 
         try {
             billingClient.payInvoice(invoice.getId());
         } catch (FeignException e) {
+            log.error("Billing service failed while paying invoice [{}]", invoice.getId(), e);
             throw new BillingServiceUnavailableException();
         }
 
         reservation.setStatus(ReservationStatus.ACTIVE);
         reservationRepository.save(reservation);
+        log.info("Invoice [{}] paid successfully. Reservation [{}] activated", invoice.getId(), reservationId);
     }
 
     private Reservation getPayableReservation(UUID reservationId, UUID userId) {

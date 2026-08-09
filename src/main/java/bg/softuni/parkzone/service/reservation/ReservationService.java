@@ -27,6 +27,7 @@ import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
 import bg.softuni.parkzone.service.billing.client.BillingClient;
 import feign.FeignException;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class ReservationService {
 
     private final ReservationRepository reservationRepository;
@@ -154,6 +156,8 @@ public class ReservationService {
                 .build();
 
         Reservation savedReservation = reservationRepository.save(reservation);
+        log.info("Reservation [{}] created for user [{}] with status [{}]",
+                savedReservation.getId(), userId, savedReservation.getStatus());
 
         CreateInvoiceRequest invoiceRequest = CreateInvoiceRequest.builder()
                 .reservationId(savedReservation.getId())
@@ -165,7 +169,9 @@ public class ReservationService {
         try {
             billingClient.createInvoice(invoiceRequest);
         } catch (FeignException e) {
+            log.error("Billing service failed while creating invoice for reservation [{}]", savedReservation.getId(), e);
             throw new BillingServiceUnavailableException();
+
         }
 
     }
@@ -256,6 +262,8 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.CANCELLED);
 
         Reservation savedReservation = reservationRepository.save(reservation);
+        log.info("Admin cancelled reservation [{}]", savedReservation.getId());
+
 
         try {
             billingClient.cancelInvoiceByReservationId(savedReservation.getId());
@@ -281,6 +289,7 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.CANCELLED);
 
         Reservation savedReservation = reservationRepository.save(reservation);
+        log.info("User [{}] cancelled reservation [{}]", userId, savedReservation.getId());
 
         try {
             billingClient.cancelInvoiceByReservationId(savedReservation.getId());
@@ -443,6 +452,9 @@ public class ReservationService {
         ));
 
         reservationRepository.save(reservation);
+
+        log.info("Reservation [{}] edited by user [{}]", reservation.getId(), userId);
+
     }
 
     public boolean isReservationStarted(UUID reservationId, UUID userId) {
@@ -471,6 +483,7 @@ public class ReservationService {
         }
 
         reservationRepository.saveAll(expiredReservations);
+        log.info("Completed [{}] expired reservations", expiredReservations.size());
     }
 
     public List<ReservationViewDTO> getReservationViewsByUserId(UUID userId) {
@@ -488,6 +501,7 @@ public class ReservationService {
                                 .build();
 
                     } catch (FeignException e) {
+                        log.warn("Invoice data unavailable for reservation [{}]", reservation.getId());
                         return ReservationViewDTO.builder()
                                 .reservation(reservation)
                                 .invoiceId(null)
@@ -525,11 +539,13 @@ public class ReservationService {
             try {
                 billingClient.cancelInvoiceByReservationId(reservation.getId());
             } catch (FeignException e) {
+                log.error("Billing service failed while cancelling invoice for expired reservation [{}]", reservation.getId(), e);
                 throw new BillingServiceUnavailableException();
             }
         }
 
         reservationRepository.saveAll(unpaidReservations);
+        log.info("Cancelled [{}] expired pending payment reservations", unpaidReservations.size());
     }
 
 

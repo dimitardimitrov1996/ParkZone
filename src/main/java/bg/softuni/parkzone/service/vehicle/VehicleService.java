@@ -15,12 +15,14 @@ import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class VehicleService {
 
     private final VehicleRepository vehicleRepository;
@@ -57,6 +59,7 @@ public class VehicleService {
                 .build();
 
         vehicleRepository.save(vehicle);
+        log.info("Vehicle [{}] created for user [{}]", vehicle.getRegistrationNumber(), id);
 
     }
 
@@ -120,6 +123,7 @@ public class VehicleService {
         vehicle.setDisabledParkingRequired(request.isDisabledParkingRequired());
 
         vehicleRepository.save(vehicle);
+        log.info("Vehicle [{}] edited by user [{}]", vehicle.getId(), userId);
     }
 
 
@@ -166,6 +170,8 @@ public class VehicleService {
 
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);
+        log.info("Vehicle [{}] deleted by user [{}]. Cancelled [{}] active reservations",
+                vehicleId, userId, activeReservations.size());
     }
 
     public List<Vehicle> getAllVehicles() {
@@ -192,6 +198,8 @@ public class VehicleService {
 
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);
+        log.info("Vehicle [{}] deleted by admin. Cancelled [{}] active reservations",
+                vehicleId, activeReservations.size());
     }
 
     public void activateVehicleByAdmin(UUID vehicleId) {
@@ -209,6 +217,7 @@ public class VehicleService {
 
         vehicle.setActive(true);
         vehicleRepository.save(vehicle);
+        log.info("Vehicle [{}] activated by admin", vehicleId);
     }
 
 }
