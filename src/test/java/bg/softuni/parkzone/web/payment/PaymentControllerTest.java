@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.web.payment;
 
 import bg.softuni.parkzone.config.SecurityConfiguration;
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
@@ -129,7 +130,7 @@ class PaymentControllerTest {
     @Test
     void getPaymentPage_whenServiceThrowsException_shouldRedirectToReservations() throws Exception {
         when(paymentService.getInvoiceForReservationPayment(reservationId, userId))
-                .thenThrow(new IllegalArgumentException("Only pending invoices can be paid"));
+                .thenThrow(new BusinessRuleException("Only pending invoices can be paid"));
 
         mockMvc.perform(get("/payments/reservation/{id}", reservationId)
                         .with(user(principal)))
@@ -162,7 +163,7 @@ class PaymentControllerTest {
     @Test
     void payReservationInvoice_whenInvoiceCannotBeLoaded_shouldRedirectToReservations() throws Exception {
         when(paymentService.getInvoiceForReservationPayment(reservationId, userId))
-                .thenThrow(new IllegalArgumentException("Invoice not found"));
+                .thenThrow(new BusinessRuleException("Invoice not found"));
 
         MockHttpServletRequestBuilder request = post("/payments/reservation/{id}", reservationId)
                 .param("cardHolderName", "Ivan Ivanov")
@@ -213,7 +214,7 @@ class PaymentControllerTest {
         when(paymentService.getReservationForPayment(reservationId, userId))
                 .thenReturn(reservation);
 
-        doThrow(new IllegalArgumentException("Card expiration date must be in the future"))
+        doThrow(new BusinessRuleException("Card expiration date must be in the future"))
                 .when(paymentService)
                 .payReservationInvoice(eq(reservationId), eq(userId), any());
 
@@ -241,7 +242,7 @@ class PaymentControllerTest {
         when(paymentService.getReservationForPayment(reservationId, userId))
                 .thenReturn(reservation);
 
-        doThrow(new IllegalArgumentException("Only pending invoices can be paid"))
+        doThrow(new BusinessRuleException("Only pending invoices can be paid"))
                 .when(paymentService)
                 .payReservationInvoice(eq(reservationId), eq(userId), any());
 

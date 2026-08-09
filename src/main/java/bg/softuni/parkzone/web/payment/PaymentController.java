@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.web.payment;
 
+import bg.softuni.parkzone.exception.ApplicationException;
 import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
 import bg.softuni.parkzone.model.dto.payment.PaymentRequestDTO;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
@@ -44,7 +45,7 @@ public class PaymentController {
 
             return modelAndView;
 
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return new ModelAndView("redirect:/reservations");
         }
@@ -64,7 +65,7 @@ public class PaymentController {
 
         try {
             invoice = paymentService.getInvoiceForReservationPayment(id, userId);
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return new ModelAndView("redirect:/reservations");
         }
@@ -79,7 +80,7 @@ public class PaymentController {
 
             return new ModelAndView("redirect:/reservations");
 
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
 
             String message = e.getMessage().toLowerCase();
 
@@ -107,5 +108,4 @@ public class PaymentController {
 
         return modelAndView;
     }
-
 }

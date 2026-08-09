@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.web;
 
+import bg.softuni.parkzone.exception.ApplicationException;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.user.UserLoginRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
@@ -67,7 +68,7 @@ public class IndexController {
 
         try {
             userService.register(userRegisterRequestDTO);
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
 
             String message = e.getMessage().toLowerCase();
 

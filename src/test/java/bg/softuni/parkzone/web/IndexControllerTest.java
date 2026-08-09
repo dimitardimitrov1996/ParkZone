@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.web;
 
 import bg.softuni.parkzone.config.SecurityConfiguration;
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import bg.softuni.parkzone.security.AuthenticationUserDetails;
@@ -123,7 +124,7 @@ class IndexControllerTest {
 
     @Test
     void register_whenUsernameAlreadyExists_shouldReturnRegisterViewWithUsernameError() throws Exception {
-        doThrow(new IllegalArgumentException("Account with this username already exists"))
+        doThrow(new BusinessRuleException("Account with this username already exists"))
                 .when(userService)
                 .register(any());
 
@@ -141,7 +142,7 @@ class IndexControllerTest {
 
     @Test
     void register_whenEmailAlreadyExists_shouldReturnRegisterViewWithEmailError() throws Exception {
-        doThrow(new IllegalArgumentException("Account with this email already exists"))
+        doThrow(new BusinessRuleException("Account with this email already exists"))
                 .when(userService)
                 .register(any());
 
@@ -159,7 +160,7 @@ class IndexControllerTest {
 
     @Test
     void register_whenServiceThrowsOtherException_shouldReturnRegisterViewWithGlobalError() throws Exception {
-        doThrow(new IllegalArgumentException("Something went wrong"))
+        doThrow(new BusinessRuleException("Something went wrong"))
                 .when(userService)
                 .register(any());
 

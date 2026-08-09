@@ -1,12 +1,12 @@
 package bg.softuni.parkzone.web.reservation;
 
+import bg.softuni.parkzone.exception.ApplicationException;
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationViewDTO;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
-import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import bg.softuni.parkzone.service.parkinglot.ParkingLotService;
@@ -99,7 +99,7 @@ public class ReservationController {
 
         try {
             reservationService.createReservation(reservationCreateRequestDTO, userId);
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
 
             String message = e.getMessage();
             String lowerMessage = message.toLowerCase();
@@ -124,7 +124,7 @@ public class ReservationController {
                     || lowerMessage.contains("electric")) {
 
                 bindingResult.rejectValue("parkingSpotId", "parkingSpotId.error", message);
-            }  else if (lowerMessage.contains("vehicle already")) {
+            } else if (lowerMessage.contains("vehicle already")) {
 
                 bindingResult.rejectValue("vehicleId", "vehicleId.error", message);
             }
@@ -167,7 +167,7 @@ public class ReservationController {
         try {
             reservationService.cancelReservationByUser(id, userId);
             redirectAttributes.addFlashAttribute("successMessage", "Reservation cancelled successfully");
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
@@ -203,7 +203,7 @@ public class ReservationController {
 
             return modelAndView;
 
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return new ModelAndView("redirect:/reservations");
         }
@@ -241,7 +241,7 @@ public class ReservationController {
         try {
             reservationService.editReservation(reservationEditRequestDTO, id, userId);
 
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
 
             String message = e.getMessage().toLowerCase();
 
@@ -284,6 +284,4 @@ public class ReservationController {
 
         return new ModelAndView("redirect:/reservations");
     }
-
-
 }

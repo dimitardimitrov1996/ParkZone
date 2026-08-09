@@ -1,5 +1,6 @@
 package bg.softuni.parkzone.web.vehicle;
 
+import bg.softuni.parkzone.exception.ApplicationException;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
@@ -82,7 +83,7 @@ public class VehicleController {
 
         try {
             vehicleService.createVehicle(vehicleCreateRequestDTO, user.getId());
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
 
             String message = e.getMessage().toLowerCase();
 
@@ -141,7 +142,7 @@ public class VehicleController {
 
         try {
             vehicleService.editVehicle(vehicleEditDTO, id, userId);
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
 
             String message = e.getMessage().toLowerCase();
 

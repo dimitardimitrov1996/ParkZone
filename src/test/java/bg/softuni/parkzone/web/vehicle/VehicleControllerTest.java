@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.web.vehicle;
 
 import bg.softuni.parkzone.config.SecurityConfiguration;
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.user.User;
@@ -175,7 +176,7 @@ class VehicleControllerTest {
     void createNewVehicle_whenRegistrationAlreadyExists_shouldReturnCreateViewWithRegistrationError() throws Exception {
         when(userService.findById(userId)).thenReturn(userDTO);
 
-        doThrow(new IllegalArgumentException("Vehicle with this registration number already exists"))
+        doThrow(new BusinessRuleException("Vehicle with this registration number already exists"))
                 .when(vehicleService)
                 .createVehicle(any(), eq(userId));
 
@@ -190,7 +191,7 @@ class VehicleControllerTest {
     void createNewVehicle_whenOtherBusinessError_shouldReturnCreateViewWithGlobalError() throws Exception {
         when(userService.findById(userId)).thenReturn(userDTO);
 
-        doThrow(new IllegalArgumentException("Something went wrong"))
+        doThrow(new BusinessRuleException("Something went wrong"))
                 .when(vehicleService)
                 .createVehicle(any(), eq(userId));
 
@@ -251,7 +252,7 @@ class VehicleControllerTest {
 
     @Test
     void editVehicle_whenRegistrationError_shouldReturnEditViewWithRegistrationError() throws Exception {
-        doThrow(new IllegalArgumentException("Vehicle with this registration number already exists"))
+        doThrow(new BusinessRuleException("Vehicle with this registration number already exists"))
                 .when(vehicleService)
                 .editVehicle(any(), eq(vehicleId), eq(userId));
 
@@ -264,7 +265,7 @@ class VehicleControllerTest {
 
     @Test
     void editVehicle_whenElectricError_shouldReturnEditViewWithEngineTypeError() throws Exception {
-        doThrow(new IllegalArgumentException("This vehicle has an active reservation for an electric charging spot"))
+        doThrow(new BusinessRuleException("This vehicle has an active reservation for an electric charging spot"))
                 .when(vehicleService)
                 .editVehicle(any(), eq(vehicleId), eq(userId));
 
@@ -276,7 +277,7 @@ class VehicleControllerTest {
 
     @Test
     void editVehicle_whenDisabledError_shouldReturnEditViewWithDisabledError() throws Exception {
-        doThrow(new IllegalArgumentException("This vehicle has an active reservation for a disabled parking spot"))
+        doThrow(new BusinessRuleException("This vehicle has an active reservation for a disabled parking spot"))
                 .when(vehicleService)
                 .editVehicle(any(), eq(vehicleId), eq(userId));
 
@@ -288,7 +289,7 @@ class VehicleControllerTest {
 
     @Test
     void editVehicle_whenIndoorOrVanError_shouldReturnEditViewWithVehicleTypeError() throws Exception {
-        doThrow(new IllegalArgumentException("This vehicle has an active indoor reservation and cannot be changed to VAN"))
+        doThrow(new BusinessRuleException("This vehicle has an active indoor reservation and cannot be changed to VAN"))
                 .when(vehicleService)
                 .editVehicle(any(), eq(vehicleId), eq(userId));
 
@@ -300,7 +301,7 @@ class VehicleControllerTest {
 
     @Test
     void editVehicle_whenOtherBusinessError_shouldReturnEditViewWithGlobalError() throws Exception {
-        doThrow(new IllegalArgumentException("Something went wrong"))
+        doThrow(new BusinessRuleException("Something went wrong"))
                 .when(vehicleService)
                 .editVehicle(any(), eq(vehicleId), eq(userId));
 

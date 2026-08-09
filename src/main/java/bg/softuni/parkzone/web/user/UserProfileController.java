@@ -25,7 +25,7 @@ public class UserProfileController {
         this.userService = userService;
     }
 
-    @GetMapping()
+    @GetMapping
     public ModelAndView getProfilePage(@AuthenticationPrincipal AuthenticationUserDetails principal) {
 
         UUID userId = principal.getId();
@@ -38,7 +38,7 @@ public class UserProfileController {
         return modelAndView;
     }
 
-    @PostMapping()
+    @PostMapping
     public ModelAndView updateProfile(
             @Valid @ModelAttribute("userProfileUpdateRequestDTO") UserProfileUpdateRequestDTO userProfileUpdateRequestDTO,
             BindingResult bindingResult,
@@ -57,6 +57,4 @@ public class UserProfileController {
 
         return new ModelAndView("redirect:/profile");
     }
-
-
 }

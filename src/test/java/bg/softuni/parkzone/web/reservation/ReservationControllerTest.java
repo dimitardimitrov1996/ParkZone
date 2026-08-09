@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.web.reservation;
 
 import bg.softuni.parkzone.config.SecurityConfiguration;
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationViewDTO;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
@@ -225,7 +226,7 @@ class ReservationControllerTest {
     void createReservation_whenServiceThrowsEndDateError_shouldReturnCreateViewWithEndDateError() throws Exception {
         mockCreatePageData();
 
-        doThrow(new IllegalArgumentException("End date must be after start date"))
+        doThrow(new BusinessRuleException("End date must be after start date"))
                 .when(reservationService)
                 .createReservation(any(), eq(userId));
 
@@ -239,7 +240,7 @@ class ReservationControllerTest {
     void createReservation_whenServiceThrowsIndoorParkingError_shouldReturnCreateViewWithParkingLotError() throws Exception {
         mockCreatePageData();
 
-        doThrow(new IllegalArgumentException("Vans cannot use indoor parking"))
+        doThrow(new BusinessRuleException("Vans cannot use indoor parking"))
                 .when(reservationService)
                 .createReservation(any(), eq(userId));
 
@@ -253,7 +254,7 @@ class ReservationControllerTest {
     void createReservation_whenServiceThrowsParkingSpotError_shouldReturnCreateViewWithParkingSpotError() throws Exception {
         mockCreatePageData();
 
-        doThrow(new IllegalArgumentException("Selected parking spot is reserved"))
+        doThrow(new BusinessRuleException("Selected parking spot is reserved"))
                 .when(reservationService)
                 .createReservation(any(), eq(userId));
 
@@ -267,7 +268,7 @@ class ReservationControllerTest {
     void createReservation_whenServiceThrowsVehicleError_shouldReturnCreateViewWithVehicleError() throws Exception {
         mockCreatePageData();
 
-        doThrow(new IllegalArgumentException("Vehicle already has reservation"))
+        doThrow(new BusinessRuleException("Vehicle already has reservation"))
                 .when(reservationService)
                 .createReservation(any(), eq(userId));
 
@@ -291,7 +292,7 @@ class ReservationControllerTest {
 
     @Test
     void cancelReservation_whenServiceThrowsException_shouldRedirectWithErrorMessage() throws Exception {
-        doThrow(new IllegalArgumentException("Only active reservations can be cancelled"))
+        doThrow(new BusinessRuleException("Only active reservations can be cancelled"))
                 .when(reservationService)
                 .cancelReservationByUser(reservationId, userId);
 
@@ -329,7 +330,7 @@ class ReservationControllerTest {
     void getEditReservationPage_whenServiceThrowsException_shouldRedirectToReservations() throws Exception {
         when(userService.findById(userId)).thenReturn(userDTO);
         when(reservationService.getReservationForEdit(reservationId, userId))
-                .thenThrow(new IllegalArgumentException("Reservation not found"));
+                .thenThrow(new BusinessRuleException("Reservation not found"));
 
         mockMvc.perform(get("/reservations/edit/{id}", reservationId)
                         .with(user(principal)))
@@ -378,7 +379,7 @@ class ReservationControllerTest {
     void editReservation_whenStartDateError_shouldReturnEditViewWithStartDateError() throws Exception {
         mockEditPageData();
 
-        doThrow(new IllegalArgumentException("Start date cannot be changed"))
+        doThrow(new BusinessRuleException("Start date cannot be changed"))
                 .when(reservationService)
                 .editReservation(any(), eq(reservationId), eq(userId));
 
@@ -392,7 +393,7 @@ class ReservationControllerTest {
     void editReservation_whenEndDateError_shouldReturnEditViewWithEndDateError() throws Exception {
         mockEditPageData();
 
-        doThrow(new IllegalArgumentException("End date is invalid"))
+        doThrow(new BusinessRuleException("End date is invalid"))
                 .when(reservationService)
                 .editReservation(any(), eq(reservationId), eq(userId));
 
@@ -406,7 +407,7 @@ class ReservationControllerTest {
     void editReservation_whenReservationTypeError_shouldReturnEditViewWithReservationTypeError() throws Exception {
         mockEditPageData();
 
-        doThrow(new IllegalArgumentException("Reservation type cannot be changed"))
+        doThrow(new BusinessRuleException("Reservation type cannot be changed"))
                 .when(reservationService)
                 .editReservation(any(), eq(reservationId), eq(userId));
 
@@ -420,7 +421,7 @@ class ReservationControllerTest {
     void editReservation_whenVehicleError_shouldReturnEditViewWithVehicleError() throws Exception {
         mockEditPageData();
 
-        doThrow(new IllegalArgumentException("Vehicle already has reservation"))
+        doThrow(new BusinessRuleException("Vehicle already has reservation"))
                 .when(reservationService)
                 .editReservation(any(), eq(reservationId), eq(userId));
 
@@ -434,7 +435,7 @@ class ReservationControllerTest {
     void editReservation_whenIndoorError_shouldReturnEditViewWithParkingLotError() throws Exception {
         mockEditPageData();
 
-        doThrow(new IllegalArgumentException("Vans cannot use indoor parking"))
+        doThrow(new BusinessRuleException("Vans cannot use indoor parking"))
                 .when(reservationService)
                 .editReservation(any(), eq(reservationId), eq(userId));
 
@@ -448,7 +449,7 @@ class ReservationControllerTest {
     void editReservation_whenParkingSpotError_shouldReturnEditViewWithParkingSpotError() throws Exception {
         mockEditPageData();
 
-        doThrow(new IllegalArgumentException("Parking spot is reserved"))
+        doThrow(new BusinessRuleException("Parking spot is reserved"))
                 .when(reservationService)
                 .editReservation(any(), eq(reservationId), eq(userId));
 
@@ -462,7 +463,7 @@ class ReservationControllerTest {
     void editReservation_whenOtherError_shouldReturnEditViewWithGlobalError() throws Exception {
         mockEditPageData();
 
-        doThrow(new IllegalArgumentException("Something went wrong"))
+        doThrow(new BusinessRuleException("Something went wrong"))
                 .when(reservationService)
                 .editReservation(any(), eq(reservationId), eq(userId));
 
