@@ -1,5 +1,7 @@
 package bg.softuni.parkzone.web.admin;
 
+import bg.softuni.parkzone.exception.ApplicationException;
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
@@ -68,7 +70,7 @@ public class AdminController {
         try {
             userService.toggleUserStatus(id, currentAdminId);
             redirectAttributes.addFlashAttribute("successMessage", "User status changed successfully");
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
@@ -92,7 +94,7 @@ public class AdminController {
 
         try {
             reservationService.cancelReservationByAdmin(id);
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
@@ -159,9 +161,9 @@ public class AdminController {
                 case "electric" -> parkingSpotService.makeElectricChargingSpot(id);
                 case "normal" -> parkingSpotService.makeNormalSpot(id);
                 case "active" -> parkingSpotService.toggleActive(id);
-                default -> throw new IllegalArgumentException("Invalid parking spot action");
+                default -> throw new BusinessRuleException("Invalid parking spot action");
             };
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
 
             return new ModelAndView("redirect:/admin/parking-lots");
@@ -188,7 +190,7 @@ public class AdminController {
         try {
             vehicleService.deleteVehicleByAdmin(id);
             redirectAttributes.addFlashAttribute("successMessage", "Vehicle deleted successfully");
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
@@ -202,7 +204,7 @@ public class AdminController {
         try {
             vehicleService.activateVehicleByAdmin(id);
             redirectAttributes.addFlashAttribute("successMessage", "Vehicle activated successfully");
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
@@ -217,13 +219,10 @@ public class AdminController {
         try {
             userService.changeUserRole(id, principal.getId());
             redirectAttributes.addFlashAttribute("successMessage", "User role changed successfully");
-        } catch (IllegalArgumentException e) {
+        } catch (ApplicationException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
         return new ModelAndView("redirect:/admin/users");
     }
-
-
-
 }

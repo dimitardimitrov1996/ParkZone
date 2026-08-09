@@ -1,6 +1,7 @@
 package bg.softuni.parkzone.web.admin;
 
 import bg.softuni.parkzone.config.SecurityConfiguration;
+import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
@@ -211,7 +212,7 @@ class AdminControllerTest {
 
     @Test
     void toggleUserStatus_whenServiceThrowsException_shouldRedirectWithErrorMessage() throws Exception {
-        doThrow(new IllegalArgumentException("You cannot deactivate your own admin account"))
+        doThrow(new BusinessRuleException("You cannot deactivate your own admin account"))
                 .when(userService)
                 .toggleUserStatus(userId, adminId);
 
@@ -237,7 +238,7 @@ class AdminControllerTest {
 
     @Test
     void changeUserRole_whenServiceThrowsException_shouldRedirectWithErrorMessage() throws Exception {
-        doThrow(new IllegalArgumentException("You cannot change your own role"))
+        doThrow(new BusinessRuleException("You cannot change your own role"))
                 .when(userService)
                 .changeUserRole(userId, adminId);
 
@@ -272,7 +273,7 @@ class AdminControllerTest {
 
     @Test
     void cancelReservation_whenServiceThrowsException_shouldRedirectWithErrorMessage() throws Exception {
-        doThrow(new IllegalArgumentException("Only active reservations can be cancelled"))
+        doThrow(new BusinessRuleException("Only active reservations can be cancelled"))
                 .when(reservationService)
                 .cancelReservationByAdmin(reservationId);
 
@@ -354,7 +355,7 @@ class AdminControllerTest {
     @Test
     void updateParkingSpot_whenServiceThrowsException_shouldRedirectToParkingLotsWithErrorMessage() throws Exception {
         when(parkingSpotService.makeDisabledSpot(parkingSpotId))
-                .thenThrow(new IllegalArgumentException("Parking spot cannot be changed"));
+                .thenThrow(new BusinessRuleException("Parking spot cannot be changed"));
 
         mockMvc.perform(post("/admin/parking-spots/{id}/make-disabled", parkingSpotId)
                         .with(user(adminPrincipal))
@@ -388,7 +389,7 @@ class AdminControllerTest {
 
     @Test
     void deleteVehicle_whenServiceThrowsException_shouldRedirectWithErrorMessage() throws Exception {
-        doThrow(new IllegalArgumentException("Vehicle is already deleted"))
+        doThrow(new BusinessRuleException("Vehicle is already deleted"))
                 .when(vehicleService)
                 .deleteVehicleByAdmin(vehicleId);
 
@@ -414,7 +415,7 @@ class AdminControllerTest {
 
     @Test
     void activateVehicle_whenServiceThrowsException_shouldRedirectWithErrorMessage() throws Exception {
-        doThrow(new IllegalArgumentException("Vehicle is already active"))
+        doThrow(new BusinessRuleException("Vehicle is already active"))
                 .when(vehicleService)
                 .activateVehicleByAdmin(vehicleId);
 
