@@ -57,7 +57,10 @@
 
                     <option th:each="p : ${parkingLots}"
                             th:value="${p.id}"
-                            th:text="${p.name}">
+                            th:text="${p.name}"
+                            th:data-daily-price="${p.dailyPrice}"
+                            th:data-monthly-price="${p.monthlyPrice}"
+                            th:data-yearly-price="${p.yearlyPrice}">
                     </option>
                 </select>
 
@@ -134,6 +137,13 @@
                 </div>
             </div>
 
+            <div class="price-preview" id="pricePreview">
+                <div>
+                    <span class="price-preview-label">Total price</span>
+                    <strong id="pricePreviewAmount">Select parking lot and reservation type</strong>
+                </div>
+            </div>
+
             <button type="submit" class="btn">
                 Save Reservation
             </button>
@@ -145,5 +155,62 @@
 </div>
 <script src="/js/reservation-date.js"></script>
 <script src="/js/reservation-spot-filter.js"></script>
+<script>
+    const parkingLotSelect = document.querySelector('[name="parkingLotId"]');
+    const reservationTypeSelect = document.querySelector('[name="reservationType"]');
+    const startDateInput = document.querySelector('[name="startDate"]');
+    const endDateInput = document.querySelector('[name="endDate"]');
+    const pricePreviewAmount = document.getElementById('pricePreviewAmount');
+
+    function updatePricePreview() {
+        const selectedParkingLot = parkingLotSelect.options[parkingLotSelect.selectedIndex];
+        const reservationType = reservationTypeSelect.value;
+
+        if (!selectedParkingLot || !selectedParkingLot.value || !reservationType) {
+            pricePreviewAmount.textContent = 'Select parking lot and reservation type';
+            return;
+        }
+
+        let basePrice;
+
+        if (reservationType === 'DAILY') {
+            basePrice = Number(selectedParkingLot.dataset.dailyPrice);
+        } else if (reservationType === 'MONTHLY') {
+            basePrice = Number(selectedParkingLot.dataset.monthlyPrice);
+        } else if (reservationType === 'YEARLY') {
+            basePrice = Number(selectedParkingLot.dataset.yearlyPrice);
+        }
+
+        if (!basePrice) {
+            pricePreviewAmount.textContent = 'Price unavailable';
+            return;
+        }
+
+        let totalPrice = basePrice;
+
+        if (reservationType === 'DAILY') {
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+
+            if (startDateInput.value && endDateInput.value && endDate > startDate) {
+                const millisecondsPerDay = 1000 * 60 * 60 * 24;
+                const days = Math.ceil((endDate - startDate) / millisecondsPerDay);
+
+                totalPrice = basePrice * days;
+            }
+        }
+
+        pricePreviewAmount.textContent = totalPrice.toFixed(2) + ' EUR';
+    }
+
+    parkingLotSelect.addEventListener('change', updatePricePreview);
+    reservationTypeSelect.addEventListener('change', updatePricePreview);
+    startDateInput.addEventListener('change', updatePricePreview);
+    endDateInput.addEventListener('change', updatePricePreview);
+    startDateInput.addEventListener('input', updatePricePreview);
+    endDateInput.addEventListener('input', updatePricePreview);
+
+    updatePricePreview();
+</script>
 </body>
 </html>

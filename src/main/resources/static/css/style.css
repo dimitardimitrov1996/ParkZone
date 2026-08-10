@@ -663,7 +663,7 @@ a.btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
     min-height: 34px;
     padding: 6px 10px;
     border-radius: 10px;
@@ -671,15 +671,21 @@ a.btn {
     font-weight: 700;
     font-size: 13px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
     font: inherit;
     text-decoration: none;
+    white-space: nowrap; /* keep icon and label on one line */
 }
 
 .btn-spot span:first-child {
-    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+    font-size: 14px;
+    line-height: 1;
 }
 
 .btn-spot::before {
@@ -779,6 +785,10 @@ a.btn {
     background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
     color: white;
     box-shadow: 0 8px 20px rgba(255, 106, 0, 0.3);
+    padding: 4px 8px; /* slightly smaller than other buttons */
+    min-height: 30px;
+    font-size: 12px;
+    border-radius: 8px;
 }
 
 .btn-spot-cancel:hover {
@@ -1134,6 +1144,27 @@ input[type="checkbox"] {
 
 input[type="checkbox"]:hover {
     transform: scale(1.1);
+}
+
+.price-preview {
+    margin: 18px 0;
+    padding: 16px 18px;
+    border: 1px solid #d9d6f0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f7f5ff, #eef9f8);
+}
+
+.price-preview-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.price-preview strong {
+    color: var(--primary-dark);
+    font-size: 22px;
 }
 
 
