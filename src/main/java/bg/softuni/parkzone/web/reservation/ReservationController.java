@@ -5,9 +5,7 @@ import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationViewDTO;
 import bg.softuni.parkzone.model.dto.user.UserDTO;
-import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
-import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
-import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.security.AuthenticationUserDetails;
 import bg.softuni.parkzone.service.parkinglot.ParkingLotService;
 import bg.softuni.parkzone.service.parkingspot.ParkingSpotService;
@@ -21,6 +19,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -34,7 +33,11 @@ public class ReservationController {
     private final ParkingLotService parkingLotService;
     private final ParkingSpotService parkingSpotService;
 
-    public ReservationController(ReservationService reservationService, UserService userService, VehicleService vehicleService, ParkingLotService parkingLotService, ParkingSpotService parkingSpotService) {
+    public ReservationController(ReservationService reservationService,
+                                 UserService userService,
+                                 VehicleService vehicleService,
+                                 ParkingLotService parkingLotService,
+                                 ParkingSpotService parkingSpotService) {
         this.reservationService = reservationService;
         this.userService = userService;
         this.vehicleService = vehicleService;
@@ -53,7 +56,6 @@ public class ReservationController {
                 reservationService.getReservationViewsByUserId(userId);
 
         ModelAndView modelAndView = new ModelAndView("reservations/list");
-
         modelAndView.addObject("user", user);
         modelAndView.addObject("reservationViews", reservationViews);
 
@@ -66,20 +68,12 @@ public class ReservationController {
         UUID userId = principal.getId();
         UserDTO user = userService.findById(userId);
 
-        List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(user.getId());
-        List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
-        List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
-
         ModelAndView modelAndView = new ModelAndView("reservations/create");
-
-        modelAndView.addObject("user", user);
         modelAndView.addObject("reservationCreateRequestDTO", ReservationCreateRequestDTO.builder().build());
-        modelAndView.addObject("vehicles", vehicles);
-        modelAndView.addObject("parkingLots", parkingLots);
-        modelAndView.addObject("parkingSpots", parkingSpots);
+
+        addReservationFormData(modelAndView, userId, user);
 
         return modelAndView;
-
     }
 
     @PostMapping("/create")
@@ -98,61 +92,11 @@ public class ReservationController {
         try {
             reservationService.createReservation(reservationCreateRequestDTO, userId);
         } catch (ApplicationException e) {
-
-            String message = e.getMessage();
-            String lowerMessage = message.toLowerCase();
-
-            bindingResult.reject("reservationError", message);
-
-            if (lowerMessage.contains("end date")
-                    || lowerMessage.contains("daily")
-                    || lowerMessage.contains("monthly")
-                    || lowerMessage.contains("yearly")) {
-
-                bindingResult.rejectValue("endDate", "endDate.error", message);
-
-            } else if (lowerMessage.contains("indoor parking")) {
-
-                bindingResult.rejectValue("parkingLotId", "parkingLotId.error", message);
-
-            } else if (lowerMessage.contains("parking spot")
-                    || lowerMessage.contains("selected parking spot")
-                    || lowerMessage.contains("reserved")
-                    || lowerMessage.contains("disabled")
-                    || lowerMessage.contains("electric")) {
-
-                bindingResult.rejectValue("parkingSpotId", "parkingSpotId.error", message);
-            } else if (lowerMessage.contains("vehicle already")) {
-
-                bindingResult.rejectValue("vehicleId", "vehicleId.error", message);
-            }
-
+            rejectCreateReservationError(bindingResult, e);
             return getCreateReservationView(userId, user, bindingResult);
         }
 
         return new ModelAndView("redirect:/reservations");
-    }
-
-    private ModelAndView getCreateReservationView(
-            UUID userId,
-            UserDTO user,
-            BindingResult bindingResult) {
-
-        List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(userId);
-        List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
-        List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
-
-        ModelAndView modelAndView = new ModelAndView(
-                "reservations/create",
-                bindingResult.getModel()
-        );
-
-        modelAndView.addObject("user", user);
-        modelAndView.addObject("vehicles", vehicles);
-        modelAndView.addObject("parkingLots", parkingLots);
-        modelAndView.addObject("parkingSpots", parkingSpots);
-
-        return modelAndView;
     }
 
     @PostMapping("/cancel/{id}")
@@ -184,20 +128,12 @@ public class ReservationController {
             ReservationEditRequestDTO reservationEditRequestDTO =
                     reservationService.getReservationForEdit(id, userId);
 
-            List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(userId);
-            List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
-            List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
-
-            boolean reservationStarted = reservationService.isReservationStarted(id, userId);
-
             ModelAndView modelAndView = new ModelAndView("reservations/edit");
             modelAndView.addObject("reservationId", id);
             modelAndView.addObject("reservationEditRequestDTO", reservationEditRequestDTO);
-            modelAndView.addObject("vehicles", vehicles);
-            modelAndView.addObject("parkingLots", parkingLots);
-            modelAndView.addObject("parkingSpots", parkingSpots);
-            modelAndView.addObject("reservationStarted", reservationStarted);
-            modelAndView.addObject("user", user);
+
+            addReservationFormData(modelAndView, userId, user);
+            addEditReservationState(modelAndView, id, userId);
 
             return modelAndView;
 
@@ -217,69 +153,149 @@ public class ReservationController {
         UUID userId = principal.getId();
         UserDTO user = userService.findById(userId);
 
-        boolean reservationStarted = reservationService.isReservationStarted(id, userId);
-
         if (bindingResult.hasErrors()) {
-
-            List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(userId);
-            List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
-            List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
-
-            ModelAndView modelAndView = new ModelAndView("reservations/edit", bindingResult.getModel());
-            modelAndView.addObject("reservationId", id);
-            modelAndView.addObject("vehicles", vehicles);
-            modelAndView.addObject("parkingLots", parkingLots);
-            modelAndView.addObject("parkingSpots", parkingSpots);
-            modelAndView.addObject("reservationStarted", reservationStarted);
-            modelAndView.addObject("user", user);
-
-            return modelAndView;
+            return getEditReservationView(id, userId, user, bindingResult);
         }
 
         try {
             reservationService.editReservation(reservationEditRequestDTO, id, userId);
-
         } catch (ApplicationException e) {
-
-            String message = e.getMessage().toLowerCase();
-
-            if (message.contains("start date")) {
-                bindingResult.rejectValue("startDate", "startDate.error", e.getMessage());
-            } else if (message.contains("end date")) {
-                bindingResult.rejectValue("endDate", "endDate.error", e.getMessage());
-            } else if (message.contains("reservation type")) {
-                bindingResult.rejectValue("reservationType", "reservationType.error", e.getMessage());
-            } else if (message.contains("vehicle already")
-                    || message.contains("vehicle is not active")
-                    || message.contains("cannot use this vehicle")) {
-                bindingResult.rejectValue("vehicleId", "vehicleId.error", e.getMessage());
-            } else if (message.contains("indoor") || message.contains("vans")) {
-                bindingResult.rejectValue("parkingLotId", "parkingLotId.error", e.getMessage());
-            } else if (message.contains("parking spot")
-                    || message.contains("spot")
-                    || message.contains("reserved")
-                    || message.contains("disabled")
-                    || message.contains("electric")) {
-                bindingResult.rejectValue("parkingSpotId", "parkingSpotId.error", e.getMessage());
-            } else {
-                bindingResult.reject("reservationEditError", e.getMessage());
-            }
-
-            List<Vehicle> vehicles = vehicleService.getVehiclesByOwner(userId);
-            List<ParkingLot> parkingLots = parkingLotService.getAllParkingLots();
-            List<ParkingSpot> parkingSpots = parkingSpotService.getAllActiveParkingSpots();
-
-            ModelAndView modelAndView = new ModelAndView("reservations/edit", bindingResult.getModel());
-            modelAndView.addObject("reservationId", id);
-            modelAndView.addObject("vehicles", vehicles);
-            modelAndView.addObject("parkingLots", parkingLots);
-            modelAndView.addObject("parkingSpots", parkingSpots);
-            modelAndView.addObject("reservationStarted", reservationStarted);
-            modelAndView.addObject("user", user);
-
-            return modelAndView;
+            rejectEditReservationError(bindingResult, e);
+            return getEditReservationView(id, userId, user, bindingResult);
         }
 
         return new ModelAndView("redirect:/reservations");
+    }
+
+    private ModelAndView getCreateReservationView(UUID userId,
+                                                  UserDTO user,
+                                                  BindingResult bindingResult) {
+
+        ModelAndView modelAndView = new ModelAndView(
+                "reservations/create",
+                bindingResult.getModel()
+        );
+
+        addReservationFormData(modelAndView, userId, user);
+
+        return modelAndView;
+    }
+
+    private ModelAndView getEditReservationView(UUID reservationId,
+                                                UUID userId,
+                                                UserDTO user,
+                                                BindingResult bindingResult) {
+
+        ModelAndView modelAndView = new ModelAndView(
+                "reservations/edit",
+                bindingResult.getModel()
+        );
+
+        modelAndView.addObject("reservationId", reservationId);
+
+        addReservationFormData(modelAndView, userId, user);
+        addEditReservationState(modelAndView, reservationId, userId);
+
+        return modelAndView;
+    }
+
+    private void addReservationFormData(ModelAndView modelAndView,
+                                        UUID userId,
+                                        UserDTO user) {
+
+        modelAndView.addObject("user", user);
+        modelAndView.addObject("vehicles", vehicleService.getVehiclesByOwner(userId));
+        modelAndView.addObject("parkingLots", parkingLotService.getAllParkingLots());
+        modelAndView.addObject("parkingSpots", parkingSpotService.getAllActiveParkingSpots());
+    }
+
+    private void addEditReservationState(ModelAndView modelAndView,
+                                         UUID reservationId,
+                                         UUID userId) {
+
+        ReservationStatus reservationStatus =
+                reservationService.getReservationStatus(reservationId, userId);
+
+        boolean pendingPayment = reservationStatus == ReservationStatus.PENDING_PAYMENT;
+        boolean reservationStarted = reservationService.isReservationStarted(reservationId, userId);
+
+        modelAndView.addObject("pendingPayment", pendingPayment);
+        modelAndView.addObject("reservationStarted", reservationStarted);
+    }
+
+    private void rejectCreateReservationError(BindingResult bindingResult,
+                                              ApplicationException e) {
+
+        String message = e.getMessage();
+        String lowerMessage = message.toLowerCase();
+
+        bindingResult.reject("reservationError", message);
+
+        if (lowerMessage.contains("end date")
+                || lowerMessage.contains("daily")
+                || lowerMessage.contains("monthly")
+                || lowerMessage.contains("yearly")) {
+
+            bindingResult.rejectValue("endDate", "endDate.error", message);
+
+        } else if (lowerMessage.contains("indoor parking")) {
+
+            bindingResult.rejectValue("parkingLotId", "parkingLotId.error", message);
+
+        } else if (lowerMessage.contains("parking spot")
+                || lowerMessage.contains("selected parking spot")
+                || lowerMessage.contains("reserved")
+                || lowerMessage.contains("disabled")
+                || lowerMessage.contains("electric")) {
+
+            bindingResult.rejectValue("parkingSpotId", "parkingSpotId.error", message);
+
+        } else if (lowerMessage.contains("vehicle already")) {
+
+            bindingResult.rejectValue("vehicleId", "vehicleId.error", message);
+        }
+    }
+
+    private void rejectEditReservationError(BindingResult bindingResult,
+                                            ApplicationException e) {
+
+        String message = e.getMessage();
+        String lowerMessage = message.toLowerCase();
+
+        if (lowerMessage.contains("start date")) {
+
+            bindingResult.rejectValue("startDate", "startDate.error", message);
+
+        } else if (lowerMessage.contains("end date")) {
+
+            bindingResult.rejectValue("endDate", "endDate.error", message);
+
+        } else if (lowerMessage.contains("reservation type")) {
+
+            bindingResult.rejectValue("reservationType", "reservationType.error", message);
+
+        } else if (lowerMessage.contains("vehicle already")
+                || lowerMessage.contains("vehicle is not active")
+                || lowerMessage.contains("cannot use this vehicle")) {
+
+            bindingResult.rejectValue("vehicleId", "vehicleId.error", message);
+
+        } else if (lowerMessage.contains("indoor")
+                || lowerMessage.contains("vans")) {
+
+            bindingResult.rejectValue("parkingLotId", "parkingLotId.error", message);
+
+        } else if (lowerMessage.contains("parking spot")
+                || lowerMessage.contains("spot")
+                || lowerMessage.contains("reserved")
+                || lowerMessage.contains("disabled")
+                || lowerMessage.contains("electric")) {
+
+            bindingResult.rejectValue("parkingSpotId", "parkingSpotId.error", message);
+
+        } else {
+
+            bindingResult.reject("reservationEditError", message);
+        }
     }
 }

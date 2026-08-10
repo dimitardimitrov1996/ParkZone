@@ -118,7 +118,7 @@
                             </div>
 
                             <div>
-                                <a th:if="${r.status.name() == 'ACTIVE' || r.status.name() == 'PENDING_PAYMENT'}"
+                                <a th:if="${view.canEdit}"
                                    th:href="@{/reservations/edit/{id}(id=${r.id})}"
                                    class="btn-spot btn-spot-edit"
                                    title="Edit this reservation">

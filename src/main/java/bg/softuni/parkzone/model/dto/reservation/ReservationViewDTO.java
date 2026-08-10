@@ -18,4 +18,7 @@ public class ReservationViewDTO {
     private UUID invoiceId;
 
     private String invoiceStatus;
+
+    private boolean canEdit;
+
 }

@@ -3,6 +3,7 @@ package bg.softuni.parkzone.service.billing.client;
 import bg.softuni.parkzone.config.BillingFeignConfiguration;
 import bg.softuni.parkzone.model.dto.billing.CreateInvoiceRequest;
 import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
+import bg.softuni.parkzone.model.dto.billing.UpdateInvoiceRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
@@ -25,4 +26,9 @@ public interface BillingClient {
 
     @PutMapping("/reservation/{reservationId}/cancel")
     InvoiceResponse cancelInvoiceByReservationId(@PathVariable UUID reservationId);
+
+    @PutMapping("/reservation/{reservationId}")
+    InvoiceResponse updateInvoiceByReservationId(
+            @PathVariable UUID reservationId,
+            @RequestBody UpdateInvoiceRequest request);
 }

@@ -4,6 +4,7 @@ import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.exception.billing.BillingServiceUnavailableException;
 import bg.softuni.parkzone.model.dto.billing.CreateInvoiceRequest;
 import bg.softuni.parkzone.model.dto.billing.InvoiceResponse;
+import bg.softuni.parkzone.model.dto.billing.UpdateInvoiceRequest;
 import bg.softuni.parkzone.model.dto.reservation.ReservationCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationEditRequestDTO;
 import bg.softuni.parkzone.model.dto.reservation.ReservationViewDTO;
@@ -86,12 +87,16 @@ class ReservationServiceTest {
 
         user = User.builder()
                 .id(userId)
+                .username("user1")
                 .isActive(true)
                 .build();
 
         vehicle = Vehicle.builder()
                 .id(vehicleId)
                 .owner(user)
+                .registrationNumber("EA2222EV")
+                .brand("Tesla")
+                .model("Model 3")
                 .vehicleType(VehicleType.CAR)
                 .engineType(EngineType.ELECTRIC)
                 .disabledParkingRequired(false)
@@ -130,33 +135,23 @@ class ReservationServiceTest {
     }
 
     @Test
-    void createReservation_whenDataIsValid_shouldCreatePendingPaymentReservation() {
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+    void createReservation_whenDataIsValid_shouldCreatePendingPaymentReservationAndInvoice() {
+        mockCreateReservationDependencies();
 
         when(reservationRepository.existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
-                eq(parkingSpotId),
-                anyList(),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
+                eq(parkingSpotId), anyList(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(false);
 
         when(reservationRepository.existsByVehicleIdAndStatusInAndStartDateBeforeAndEndDateAfter(
-                eq(vehicleId),
-                anyList(),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
+                eq(vehicleId), anyList(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(false);
 
         when(reservationRepository.save(any(Reservation.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        when(billingClient.createInvoice(any(CreateInvoiceRequest.class)))
-                .thenReturn(InvoiceResponse.builder()
-                        .status("PENDING")
-                        .build());
+                .thenAnswer(invocation -> {
+                    Reservation reservation = invocation.getArgument(0);
+                    reservation.setId(UUID.randomUUID());
+                    return reservation;
+                });
 
         reservationService.createReservation(createRequestDTO, userId);
 
@@ -166,58 +161,74 @@ class ReservationServiceTest {
                         && reservation.getVehicle().getId().equals(vehicleId)
                         && reservation.getParkingLot().getId().equals(parkingLotId)
                         && reservation.getParkingSpot().getId().equals(parkingSpotId)
+                        && reservation.getTotalPrice().compareTo(BigDecimal.valueOf(5)) == 0
         ));
 
-        verify(billingClient).createInvoice(any(CreateInvoiceRequest.class));
+        verify(billingClient).createInvoice(argThat(request ->
+                request.getUserId().equals(userId)
+                        && request.getAmount().compareTo(BigDecimal.valueOf(5)) == 0
+                        && request.getCurrency().equals("EUR")
+        ));
     }
 
     @Test
     void createReservation_whenParkingSpotIsAlreadyTaken_shouldThrowBusinessRuleException() {
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         when(reservationRepository.existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
-                eq(parkingSpotId),
-                anyList(),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
+                eq(parkingSpotId), anyList(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(true);
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any());
         verify(billingClient, never()).createInvoice(any());
     }
 
     @Test
     void createReservation_whenVehicleIsAlreadyReserved_shouldThrowBusinessRuleException() {
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         when(reservationRepository.existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
-                eq(parkingSpotId),
-                anyList(),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
+                eq(parkingSpotId), anyList(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(false);
 
         when(reservationRepository.existsByVehicleIdAndStatusInAndStartDateBeforeAndEndDateAfter(
-                eq(vehicleId),
-                anyList(),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
+                eq(vehicleId), anyList(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(true);
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any());
         verify(billingClient, never()).createInvoice(any());
+    }
+
+    @Test
+    void createReservation_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
+        mockCreateReservationDependencies();
+
+        when(reservationRepository.existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
+                eq(parkingSpotId), anyList(), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(false);
+
+        when(reservationRepository.existsByVehicleIdAndStatusInAndStartDateBeforeAndEndDateAfter(
+                eq(vehicleId), anyList(), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(false);
+
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> {
+                    Reservation reservation = invocation.getArgument(0);
+                    reservation.setId(UUID.randomUUID());
+                    return reservation;
+                });
+
+        when(billingClient.createInvoice(any(CreateInvoiceRequest.class)))
+                .thenThrow(mock(FeignException.class));
+
+        assertThrows(BillingServiceUnavailableException.class,
+                () -> reservationService.createReservation(createRequestDTO, userId));
     }
 
     @Test
@@ -225,16 +236,12 @@ class ReservationServiceTest {
         vehicle.setVehicleType(VehicleType.VAN);
         parkingLot.setParkingType(ParkingType.INDOOR);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
-        verify(billingClient, never()).createInvoice(any());
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
@@ -242,16 +249,12 @@ class ReservationServiceTest {
         vehicle.setEngineType(EngineType.DIESEL);
         parkingSpot.setElectricChargingSpot(true);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
-        verify(billingClient, never()).createInvoice(any());
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
@@ -259,71 +262,53 @@ class ReservationServiceTest {
         vehicle.setDisabledParkingRequired(false);
         parkingSpot.setDisabledSpot(true);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
-        verify(billingClient, never()).createInvoice(any());
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
     void createReservation_whenVehicleIsInactive_shouldThrowBusinessRuleException() {
         vehicle.setActive(false);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
-        verify(billingClient, never()).createInvoice(any());
-    }
-
-    @Test
-    void createReservation_whenVehicleDoesNotBelongToUser_shouldThrowBusinessRuleException() {
-        UUID otherUserId = UUID.randomUUID();
-
-        User otherUser = User.builder()
-                .id(otherUserId)
-                .isActive(true)
-                .build();
-
-        vehicle.setOwner(otherUser);
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
-
-        assertThrows(BusinessRuleException.class,
-                () -> reservationService.createReservation(createRequestDTO, userId));
-
-        verify(reservationRepository, never()).save(any(Reservation.class));
-        verify(billingClient, never()).createInvoice(any());
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
     void createReservation_whenParkingSpotIsInactive_shouldThrowBusinessRuleException() {
         parkingSpot.setActive(false);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
-        verify(billingClient, never()).createInvoice(any());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void createReservation_whenVehicleDoesNotBelongToUser_shouldThrowBusinessRuleException() {
+        User otherUser = User.builder()
+                .id(UUID.randomUUID())
+                .isActive(true)
+                .build();
+
+        vehicle.setOwner(otherUser);
+
+        mockCreateReservationDependencies();
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.createReservation(createRequestDTO, userId));
+
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
@@ -342,20 +327,67 @@ class ReservationServiceTest {
 
         parkingSpot.setParkingLot(otherParkingLot);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        mockCreateReservationDependencies();
 
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.createReservation(createRequestDTO, userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
-        verify(billingClient, never()).createInvoice(any());
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
-    void cancelReservation_whenReservationIsPendingPayment_shouldCancelReservationAndInvoice() {
+    void createReservation_whenEndDateIsBeforeStartDate_shouldThrowBusinessRuleException() {
+        createRequestDTO.setEndDate(createRequestDTO.getStartDate().minusHours(1));
+
+        mockCreateReservationDependencies();
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.createReservation(createRequestDTO, userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void createReservation_whenMonthlyReservationIsNotExactlyOneMonth_shouldThrowBusinessRuleException() {
+        createRequestDTO.setReservationType(ReservationType.MONTHLY);
+        createRequestDTO.setEndDate(createRequestDTO.getStartDate().plusDays(20));
+
+        mockCreateReservationDependencies();
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.createReservation(createRequestDTO, userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void createReservation_whenYearlyReservationIsNotExactlyOneYear_shouldThrowBusinessRuleException() {
+        createRequestDTO.setReservationType(ReservationType.YEARLY);
+        createRequestDTO.setEndDate(createRequestDTO.getStartDate().plusMonths(11));
+
+        mockCreateReservationDependencies();
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.createReservation(createRequestDTO, userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void getAllReservations_shouldReturnReservationsOrderedByCreatedOnDesc() {
+        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
+
+        when(reservationRepository.findAllByOrderByCreatedOnDesc())
+                .thenReturn(List.of(reservation));
+
+        List<Reservation> result = reservationService.getAllReservations();
+
+        assertEquals(1, result.size());
+        assertEquals(reservation, result.get(0));
+    }
+
+    @Test
+    void cancelReservationByUser_whenReservationIsPendingPayment_shouldCancelReservationAndInvoice() {
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
         when(reservationRepository.findById(reservation.getId()))
@@ -374,17 +406,15 @@ class ReservationServiceTest {
 
     @Test
     void cancelReservationByUser_whenReservationBelongsToAnotherUser_shouldThrowBusinessRuleException() {
-        UUID otherUserId = UUID.randomUUID();
-
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
 
         assertThrows(BusinessRuleException.class,
-                () -> reservationService.cancelReservationByUser(reservation.getId(), otherUserId));
+                () -> reservationService.cancelReservationByUser(reservation.getId(), UUID.randomUUID()));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any());
         verify(billingClient, never()).cancelInvoiceByReservationId(any());
     }
 
@@ -398,8 +428,25 @@ class ReservationServiceTest {
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.cancelReservationByUser(reservation.getId(), userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any());
         verify(billingClient, never()).cancelInvoiceByReservationId(any());
+    }
+
+    @Test
+    void cancelReservationByUser_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(billingClient.cancelInvoiceByReservationId(reservation.getId()))
+                .thenThrow(mock(FeignException.class));
+
+        assertThrows(BillingServiceUnavailableException.class,
+                () -> reservationService.cancelReservationByUser(reservation.getId(), userId));
     }
 
     @Test
@@ -430,50 +477,29 @@ class ReservationServiceTest {
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.cancelReservationByAdmin(reservation.getId()));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any());
         verify(billingClient, never()).cancelInvoiceByReservationId(any());
     }
 
     @Test
-    void completeExpiredReservations_whenExpiredActiveReservationsExist_shouldMarkThemCompleted() {
-        Reservation firstReservation = createReservation(ReservationStatus.ACTIVE);
-        Reservation secondReservation = createReservation(ReservationStatus.ACTIVE);
+    void cancelReservationByAdmin_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
+        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
 
-        when(reservationRepository.findAllByStatusAndEndDateBefore(
-                eq(ReservationStatus.ACTIVE),
-                any(LocalDateTime.class)
-        )).thenReturn(List.of(firstReservation, secondReservation));
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
 
-        reservationService.completeExpiredReservations();
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertEquals(ReservationStatus.COMPLETED, firstReservation.getStatus());
-        assertEquals(ReservationStatus.COMPLETED, secondReservation.getStatus());
+        when(billingClient.cancelInvoiceByReservationId(reservation.getId()))
+                .thenThrow(mock(FeignException.class));
 
-        verify(reservationRepository).saveAll(List.of(firstReservation, secondReservation));
+        assertThrows(BillingServiceUnavailableException.class,
+                () -> reservationService.cancelReservationByAdmin(reservation.getId()));
     }
 
     @Test
-    void cancelExpiredPendingPaymentReservations_whenExpiredPendingReservationsExist_shouldCancelThemAndInvoices() {
-        Reservation firstReservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-        Reservation secondReservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-
-        when(reservationRepository.findAllByStatusAndStartDateBefore(
-                eq(ReservationStatus.PENDING_PAYMENT),
-                any(LocalDateTime.class)
-        )).thenReturn(List.of(firstReservation, secondReservation));
-
-        reservationService.cancelExpiredPendingPaymentReservations();
-
-        assertEquals(ReservationStatus.CANCELLED, firstReservation.getStatus());
-        assertEquals(ReservationStatus.CANCELLED, secondReservation.getStatus());
-
-        verify(billingClient).cancelInvoiceByReservationId(firstReservation.getId());
-        verify(billingClient).cancelInvoiceByReservationId(secondReservation.getId());
-        verify(reservationRepository).saveAll(List.of(firstReservation, secondReservation));
-    }
-
-    @Test
-    void getReservationForEdit_whenReservationIsPendingPaymentAndOwnedByUser_shouldReturnEditDTO() {
+    void getReservationForEdit_whenReservationIsPendingPayment_shouldReturnEditDto() {
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
         when(reservationRepository.findById(reservation.getId()))
@@ -482,25 +508,21 @@ class ReservationServiceTest {
         ReservationEditRequestDTO result =
                 reservationService.getReservationForEdit(reservation.getId(), userId);
 
-        assertEquals(reservation.getVehicle().getId(), result.getVehicleId());
-        assertEquals(reservation.getParkingLot().getId(), result.getParkingLotId());
-        assertEquals(reservation.getParkingSpot().getId(), result.getParkingSpotId());
+        assertEquals(vehicleId, result.getVehicleId());
+        assertEquals(parkingLotId, result.getParkingLotId());
+        assertEquals(parkingSpotId, result.getParkingSpotId());
         assertEquals(reservation.getReservationType(), result.getReservationType());
-        assertEquals(reservation.getStartDate(), result.getStartDate());
-        assertEquals(reservation.getEndDate(), result.getEndDate());
     }
 
     @Test
     void getReservationForEdit_whenReservationBelongsToAnotherUser_shouldThrowBusinessRuleException() {
-        UUID otherUserId = UUID.randomUUID();
-
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
 
         assertThrows(BusinessRuleException.class,
-                () -> reservationService.getReservationForEdit(reservation.getId(), otherUserId));
+                () -> reservationService.getReservationForEdit(reservation.getId(), UUID.randomUUID()));
     }
 
     @Test
@@ -515,32 +537,33 @@ class ReservationServiceTest {
     }
 
     @Test
-    void editReservation_whenReservationIsPendingPaymentAndDataIsValid_shouldUpdateReservation() {
-        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+    void getReservationForEdit_whenActiveReservationAlreadyStarted_shouldThrowBusinessRuleException() {
+        Reservation reservation = createStartedReservation();
 
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
 
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.getReservationForEdit(reservation.getId(), userId));
+    }
+
+    @Test
+    void editReservation_whenPendingPaymentAndDataIsValid_shouldUpdateReservationAndInvoice() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+
+        mockEditReservationDependencies(reservation, editRequestDTO);
 
         when(reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
-                eq(parkingSpotId),
-                anyList(),
-                eq(reservation.getId()),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
+                eq(parkingSpotId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(false);
 
         when(reservationRepository.existsByVehicleIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
-                eq(vehicleId),
-                anyList(),
-                eq(reservation.getId()),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
+                eq(vehicleId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
         )).thenReturn(false);
+
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         reservationService.editReservation(editRequestDTO, reservation.getId(), userId);
 
@@ -552,48 +575,83 @@ class ReservationServiceTest {
         assertEquals(editRequestDTO.getEndDate(), reservation.getEndDate());
 
         verify(reservationRepository).save(reservation);
+        verify(billingClient).updateInvoiceByReservationId(
+                eq(reservation.getId()),
+                any(UpdateInvoiceRequest.class)
+        );
     }
 
     @Test
-    void editReservation_whenReservationBelongsToAnotherUser_shouldThrowBusinessRuleException() {
-        UUID otherUserId = UUID.randomUUID();
+    void editReservation_whenActiveBeforeStartAndVehicleAndSpotAreChanged_shouldUpdateWithoutInvoiceUpdate() {
+        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
 
-        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+        UUID newVehicleId = UUID.randomUUID();
+        Vehicle newVehicle = Vehicle.builder()
+                .id(newVehicleId)
+                .owner(user)
+                .vehicleType(VehicleType.CAR)
+                .engineType(EngineType.ELECTRIC)
+                .disabledParkingRequired(false)
+                .active(true)
+                .build();
+
+        UUID newParkingSpotId = UUID.randomUUID();
+        ParkingSpot newParkingSpot = ParkingSpot.builder()
+                .id(newParkingSpotId)
+                .parkingLot(parkingLot)
+                .spotNumber(2)
+                .active(true)
+                .electricChargingSpot(false)
+                .disabledSpot(false)
+                .build();
+
+        ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
+                .vehicleId(newVehicleId)
+                .parkingLotId(parkingLotId)
+                .parkingSpotId(newParkingSpotId)
+                .reservationType(reservation.getReservationType())
+                .startDate(reservation.getStartDate())
+                .endDate(reservation.getEndDate())
+                .build();
 
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
 
-        assertThrows(BusinessRuleException.class,
-                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), otherUserId));
+        when(vehicleRepository.findById(newVehicleId)).thenReturn(Optional.of(newVehicle));
+        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
+        when(parkingSpotRepository.findById(newParkingSpotId)).thenReturn(Optional.of(newParkingSpot));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        when(reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
+                eq(newParkingSpotId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(false);
+
+        when(reservationRepository.existsByVehicleIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
+                eq(newVehicleId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(false);
+
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        reservationService.editReservation(editRequestDTO, reservation.getId(), userId);
+
+        assertEquals(newVehicleId, reservation.getVehicle().getId());
+        assertEquals(newParkingSpotId, reservation.getParkingSpot().getId());
+        assertEquals(ReservationStatus.ACTIVE, reservation.getStatus());
+
+        verify(reservationRepository).save(reservation);
+        verify(billingClient, never()).updateInvoiceByReservationId(any(), any());
     }
 
     @Test
-    void editReservation_whenReservationIsCompleted_shouldThrowBusinessRuleException() {
-        Reservation reservation = createReservation(ReservationStatus.COMPLETED);
-        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
-
-        when(reservationRepository.findById(reservation.getId()))
-                .thenReturn(Optional.of(reservation));
-
-        assertThrows(BusinessRuleException.class,
-                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
-
-        verify(reservationRepository, never()).save(any(Reservation.class));
-    }
-
-    @Test
-    void editReservation_whenStartedReservationStartDateIsChanged_shouldThrowBusinessRuleException() {
-        Reservation reservation = createStartedReservation();
+    void editReservation_whenActiveBeforeStartAndParkingLotIsChanged_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
 
         ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
                 .vehicleId(vehicleId)
-                .parkingLotId(parkingLotId)
+                .parkingLotId(UUID.randomUUID())
                 .parkingSpotId(parkingSpotId)
                 .reservationType(reservation.getReservationType())
-                .startDate(reservation.getStartDate().plusHours(1))
+                .startDate(reservation.getStartDate())
                 .endDate(reservation.getEndDate())
                 .build();
 
@@ -603,34 +661,13 @@ class ReservationServiceTest {
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any());
+        verify(billingClient, never()).updateInvoiceByReservationId(any(), any());
     }
 
     @Test
-    void editReservation_whenStartedReservationEndDateIsChanged_shouldThrowBusinessRuleException() {
-        Reservation reservation = createStartedReservation();
-
-        ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
-                .vehicleId(vehicleId)
-                .parkingLotId(parkingLotId)
-                .parkingSpotId(parkingSpotId)
-                .reservationType(reservation.getReservationType())
-                .startDate(reservation.getStartDate())
-                .endDate(reservation.getEndDate().plusDays(1))
-                .build();
-
-        when(reservationRepository.findById(reservation.getId()))
-                .thenReturn(Optional.of(reservation));
-
-        assertThrows(BusinessRuleException.class,
-                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
-
-        verify(reservationRepository, never()).save(any(Reservation.class));
-    }
-
-    @Test
-    void editReservation_whenStartedReservationTypeIsChanged_shouldThrowBusinessRuleException() {
-        Reservation reservation = createStartedReservation();
+    void editReservation_whenActiveBeforeStartAndReservationTypeIsChanged_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
 
         ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
                 .vehicleId(vehicleId)
@@ -647,7 +684,178 @@ class ReservationServiceTest {
         assertThrows(BusinessRuleException.class,
                 () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
 
-        verify(reservationRepository, never()).save(any(Reservation.class));
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenActiveBeforeStartAndStartDateIsChanged_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
+
+        ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
+                .vehicleId(vehicleId)
+                .parkingLotId(parkingLotId)
+                .parkingSpotId(parkingSpotId)
+                .reservationType(reservation.getReservationType())
+                .startDate(reservation.getStartDate().plusHours(1))
+                .endDate(reservation.getEndDate())
+                .build();
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenActiveBeforeStartAndEndDateIsChanged_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
+
+        ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
+                .vehicleId(vehicleId)
+                .parkingLotId(parkingLotId)
+                .parkingSpotId(parkingSpotId)
+                .reservationType(reservation.getReservationType())
+                .startDate(reservation.getStartDate())
+                .endDate(reservation.getEndDate().plusHours(1))
+                .build();
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenActiveReservationAlreadyStarted_shouldThrowBusinessRuleException() {
+        Reservation reservation = createStartedReservation();
+        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenPendingPaymentInvoiceUpdateFails_shouldThrowBillingServiceUnavailableException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+
+        mockEditReservationDependencies(reservation, editRequestDTO);
+
+        when(reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
+                eq(parkingSpotId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(false);
+
+        when(reservationRepository.existsByVehicleIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
+                eq(vehicleId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(false);
+
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(billingClient.updateInvoiceByReservationId(eq(reservation.getId()), any(UpdateInvoiceRequest.class)))
+                .thenThrow(mock(FeignException.class));
+
+        assertThrows(BillingServiceUnavailableException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+    }
+
+    @Test
+    void editReservation_whenReservationBelongsToAnotherUser_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), UUID.randomUUID()));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenReservationIsCompleted_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.COMPLETED);
+        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenStartDateIsNotInFutureForPendingPayment_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+
+        ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
+                .vehicleId(vehicleId)
+                .parkingLotId(parkingLotId)
+                .parkingSpotId(parkingSpotId)
+                .reservationType(ReservationType.DAILY)
+                .startDate(LocalDateTime.now().minusHours(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .build();
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenParkingSpotIsTaken_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+
+        mockEditReservationDependencies(reservation, editRequestDTO);
+
+        when(reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
+                eq(parkingSpotId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(true);
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void editReservation_whenVehicleIsAlreadyReserved_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
+
+        mockEditReservationDependencies(reservation, editRequestDTO);
+
+        when(reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
+                eq(parkingSpotId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(false);
+
+        when(reservationRepository.existsByVehicleIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
+                eq(vehicleId), anyList(), eq(reservation.getId()), any(LocalDateTime.class), any(LocalDateTime.class)
+        )).thenReturn(true);
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
+
+        verify(reservationRepository, never()).save(any());
     }
 
     @Test
@@ -676,19 +884,93 @@ class ReservationServiceTest {
 
     @Test
     void isReservationStarted_whenReservationBelongsToAnotherUser_shouldThrowBusinessRuleException() {
-        UUID otherUserId = UUID.randomUUID();
-
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
 
         assertThrows(BusinessRuleException.class,
-                () -> reservationService.isReservationStarted(reservation.getId(), otherUserId));
+                () -> reservationService.isReservationStarted(reservation.getId(), UUID.randomUUID()));
     }
 
     @Test
-    void getReservationViewsByUserId_whenBillingServiceReturnsInvoice_shouldReturnViewWithInvoiceStatus() {
+    void getReservationStatus_whenReservationBelongsToUser_shouldReturnStatus() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        ReservationStatus result = reservationService.getReservationStatus(reservation.getId(), userId);
+
+        assertEquals(ReservationStatus.PENDING_PAYMENT, result);
+    }
+
+    @Test
+    void getReservationStatus_whenReservationBelongsToAnotherUser_shouldThrowBusinessRuleException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+
+        when(reservationRepository.findById(reservation.getId()))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(BusinessRuleException.class,
+                () -> reservationService.getReservationStatus(reservation.getId(), UUID.randomUUID()));
+    }
+
+    @Test
+    void completeExpiredReservations_whenExpiredActiveReservationsExist_shouldMarkThemCompleted() {
+        Reservation firstReservation = createReservation(ReservationStatus.ACTIVE);
+        Reservation secondReservation = createReservation(ReservationStatus.ACTIVE);
+
+        when(reservationRepository.findAllByStatusAndEndDateBefore(
+                eq(ReservationStatus.ACTIVE),
+                any(LocalDateTime.class)
+        )).thenReturn(List.of(firstReservation, secondReservation));
+
+        reservationService.completeExpiredReservations();
+
+        assertEquals(ReservationStatus.COMPLETED, firstReservation.getStatus());
+        assertEquals(ReservationStatus.COMPLETED, secondReservation.getStatus());
+
+        verify(reservationRepository).saveAll(List.of(firstReservation, secondReservation));
+    }
+
+    @Test
+    void cancelExpiredPendingPaymentReservations_whenExpiredUnpaidReservationsExist_shouldCancelThemAndInvoices() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+
+        when(reservationRepository.findAllByStatusAndStartDateBefore(
+                eq(ReservationStatus.PENDING_PAYMENT),
+                any(LocalDateTime.class)
+        )).thenReturn(List.of(reservation));
+
+        reservationService.cancelExpiredPendingPaymentReservations();
+
+        assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
+
+        verify(billingClient).cancelInvoiceByReservationId(reservation.getId());
+        verify(reservationRepository).saveAll(List.of(reservation));
+    }
+
+    @Test
+    void cancelExpiredPendingPaymentReservations_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
+        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
+
+        when(reservationRepository.findAllByStatusAndStartDateBefore(
+                eq(ReservationStatus.PENDING_PAYMENT),
+                any(LocalDateTime.class)
+        )).thenReturn(List.of(reservation));
+
+        when(billingClient.cancelInvoiceByReservationId(reservation.getId()))
+                .thenThrow(mock(FeignException.class));
+
+        assertThrows(BillingServiceUnavailableException.class,
+                () -> reservationService.cancelExpiredPendingPaymentReservations());
+
+        verify(reservationRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void getReservationViewsByUserId_whenBillingServiceReturnsInvoice_shouldReturnViewWithInvoiceStatusAndCanEdit() {
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
         InvoiceResponse invoice = InvoiceResponse.builder()
@@ -713,10 +995,11 @@ class ReservationServiceTest {
         assertEquals(reservation, result.get(0).getReservation());
         assertEquals(invoice.getId(), result.get(0).getInvoiceId());
         assertEquals("PENDING", result.get(0).getInvoiceStatus());
+        assertTrue(result.get(0).isCanEdit());
     }
 
     @Test
-    void getReservationViewsByUserId_whenBillingServiceFails_shouldReturnUnavailableInvoiceStatus() {
+    void getReservationViewsByUserId_whenBillingServiceFails_shouldReturnUnavailableInvoiceStatusAndCanEdit() {
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
         when(reservationRepository.findAllByUserIdOrderByCreatedOnDesc(userId))
@@ -730,180 +1013,57 @@ class ReservationServiceTest {
 
         assertEquals(1, result.size());
         assertEquals(reservation, result.get(0).getReservation());
-        assertEquals(null, result.get(0).getInvoiceId());
+        assertNull(result.get(0).getInvoiceId());
         assertEquals("UNAVAILABLE", result.get(0).getInvoiceStatus());
+        assertTrue(result.get(0).isCanEdit());
     }
 
     @Test
-    void createReservation_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
+    void getReservationViewsByUserId_whenReservationIsCompleted_shouldReturnCanEditFalse() {
+        Reservation reservation = createReservation(ReservationStatus.COMPLETED);
+
+        InvoiceResponse invoice = InvoiceResponse.builder()
+                .id(UUID.randomUUID())
+                .reservationId(reservation.getId())
+                .userId(userId)
+                .amount(BigDecimal.valueOf(5))
+                .currency("EUR")
+                .status("PAID")
+                .build();
+
+        when(reservationRepository.findAllByUserIdOrderByCreatedOnDesc(userId))
+                .thenReturn(List.of(reservation));
+
+        when(billingClient.getInvoiceByReservationId(reservation.getId()))
+                .thenReturn(invoice);
+
+        List<ReservationViewDTO> result =
+                reservationService.getReservationViewsByUserId(userId);
+
+        assertFalse(result.get(0).isCanEdit());
+    }
+
+    private void mockCreateReservationDependencies() {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
         when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
         when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
-
-        when(reservationRepository.existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
-                eq(parkingSpotId),
-                anyList(),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
-        )).thenReturn(false);
-
-        when(reservationRepository.existsByVehicleIdAndStatusInAndStartDateBeforeAndEndDateAfter(
-                eq(vehicleId),
-                anyList(),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
-        )).thenReturn(false);
-
-        when(reservationRepository.save(any(Reservation.class)))
-                .thenAnswer(invocation -> {
-                    Reservation reservation = invocation.getArgument(0);
-                    reservation.setId(UUID.randomUUID());
-                    return reservation;
-                });
-
-        when(billingClient.createInvoice(any(CreateInvoiceRequest.class)))
-                .thenThrow(mock(FeignException.class));
-
-        assertThrows(BillingServiceUnavailableException.class,
-                () -> reservationService.createReservation(createRequestDTO, userId));
     }
 
-    @Test
-    void cancelReservationByUser_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
-        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-
+    private void mockEditReservationDependencies(Reservation reservation,
+                                                 ReservationEditRequestDTO editRequestDTO) {
         when(reservationRepository.findById(reservation.getId()))
                 .thenReturn(Optional.of(reservation));
 
-        when(reservationRepository.save(any(Reservation.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(vehicleRepository.findById(editRequestDTO.getVehicleId()))
+                .thenReturn(Optional.of(vehicle));
 
-        when(billingClient.cancelInvoiceByReservationId(reservation.getId()))
-                .thenThrow(mock(FeignException.class));
+        when(parkingLotRepository.findById(editRequestDTO.getParkingLotId()))
+                .thenReturn(Optional.of(parkingLot));
 
-        assertThrows(BillingServiceUnavailableException.class,
-                () -> reservationService.cancelReservationByUser(reservation.getId(), userId));
+        when(parkingSpotRepository.findById(editRequestDTO.getParkingSpotId()))
+                .thenReturn(Optional.of(parkingSpot));
     }
-
-    @Test
-    void cancelReservationByAdmin_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
-        Reservation reservation = createReservation(ReservationStatus.ACTIVE);
-
-        when(reservationRepository.findById(reservation.getId()))
-                .thenReturn(Optional.of(reservation));
-
-        when(reservationRepository.save(any(Reservation.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        when(billingClient.cancelInvoiceByReservationId(reservation.getId()))
-                .thenThrow(mock(FeignException.class));
-
-        assertThrows(BillingServiceUnavailableException.class,
-                () -> reservationService.cancelReservationByAdmin(reservation.getId()));
-    }
-
-    @Test
-    void cancelExpiredPendingPaymentReservations_whenBillingServiceFails_shouldThrowBillingServiceUnavailableException() {
-        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-
-        when(reservationRepository.findAllByStatusAndStartDateBefore(
-                eq(ReservationStatus.PENDING_PAYMENT),
-                any(LocalDateTime.class)
-        )).thenReturn(List.of(reservation));
-
-        when(billingClient.cancelInvoiceByReservationId(reservation.getId()))
-                .thenThrow(mock(FeignException.class));
-
-        assertThrows(BillingServiceUnavailableException.class,
-                () -> reservationService.cancelExpiredPendingPaymentReservations());
-
-        verify(reservationRepository, never()).saveAll(anyList());
-    }
-
-    @Test
-    void editReservation_whenStartDateIsNotInFuture_shouldThrowBusinessRuleException() {
-        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-
-        ReservationEditRequestDTO editRequestDTO = ReservationEditRequestDTO.builder()
-                .vehicleId(vehicleId)
-                .parkingLotId(parkingLotId)
-                .parkingSpotId(parkingSpotId)
-                .reservationType(ReservationType.DAILY)
-                .startDate(LocalDateTime.now().minusHours(1))
-                .endDate(LocalDateTime.now().plusDays(1))
-                .build();
-
-        when(reservationRepository.findById(reservation.getId()))
-                .thenReturn(Optional.of(reservation));
-
-        assertThrows(BusinessRuleException.class,
-                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
-
-        verify(reservationRepository, never()).save(any(Reservation.class));
-    }
-
-    @Test
-    void editReservation_whenParkingSpotIsTaken_shouldThrowBusinessRuleException() {
-        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
-
-        when(reservationRepository.findById(reservation.getId()))
-                .thenReturn(Optional.of(reservation));
-
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
-
-        when(reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
-                eq(parkingSpotId),
-                anyList(),
-                eq(reservation.getId()),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
-        )).thenReturn(true);
-
-        assertThrows(BusinessRuleException.class,
-                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
-
-        verify(reservationRepository, never()).save(any(Reservation.class));
-    }
-
-    @Test
-    void editReservation_whenVehicleIsAlreadyReserved_shouldThrowBusinessRuleException() {
-        Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
-        ReservationEditRequestDTO editRequestDTO = createEditRequestDTO();
-
-        when(reservationRepository.findById(reservation.getId()))
-                .thenReturn(Optional.of(reservation));
-
-        when(vehicleRepository.findById(vehicleId)).thenReturn(Optional.of(vehicle));
-        when(parkingLotRepository.findById(parkingLotId)).thenReturn(Optional.of(parkingLot));
-        when(parkingSpotRepository.findById(parkingSpotId)).thenReturn(Optional.of(parkingSpot));
-
-        when(reservationRepository.existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
-                eq(parkingSpotId),
-                anyList(),
-                eq(reservation.getId()),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
-        )).thenReturn(false);
-
-        when(reservationRepository.existsByVehicleIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
-                eq(vehicleId),
-                anyList(),
-                eq(reservation.getId()),
-                any(LocalDateTime.class),
-                any(LocalDateTime.class)
-        )).thenReturn(true);
-
-        assertThrows(BusinessRuleException.class,
-                () -> reservationService.editReservation(editRequestDTO, reservation.getId(), userId));
-
-        verify(reservationRepository, never()).save(any(Reservation.class));
-    }
-
-
 
     private Reservation createReservation(ReservationStatus status) {
         return Reservation.builder()
@@ -915,6 +1075,8 @@ class ReservationServiceTest {
                 .reservationType(createRequestDTO.getReservationType())
                 .startDate(createRequestDTO.getStartDate())
                 .endDate(createRequestDTO.getEndDate())
+                .disabledParkingSpotRequired(parkingSpot.isDisabledSpot())
+                .electricChargingRequired(parkingSpot.isElectricChargingSpot())
                 .status(status)
                 .totalPrice(BigDecimal.valueOf(5))
                 .createdOn(LocalDateTime.now())
@@ -942,10 +1104,11 @@ class ReservationServiceTest {
                 .reservationType(ReservationType.DAILY)
                 .startDate(LocalDateTime.now().minusHours(1))
                 .endDate(LocalDateTime.now().plusDays(1))
+                .disabledParkingSpotRequired(parkingSpot.isDisabledSpot())
+                .electricChargingRequired(parkingSpot.isElectricChargingSpot())
                 .status(ReservationStatus.ACTIVE)
                 .totalPrice(BigDecimal.valueOf(5))
                 .createdOn(LocalDateTime.now().minusDays(1))
                 .build();
     }
-
 }

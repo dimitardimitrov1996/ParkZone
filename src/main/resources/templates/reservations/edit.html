@@ -42,8 +42,10 @@
 
             <div class="form-group">
                 <label for="vehicleId">Vehicle</label>
-                <select id="vehicleId" th:field="*{vehicleId}">
+
+                <select id="vehicleId" th:field="*{vehicleId}" required>
                     <option value="">Select vehicle</option>
+
                     <option th:each="v : ${vehicles}"
                             th:value="${v.id}"
                             th:text="${v.registrationNumber + ' - ' + v.brand + ' ' + v.model}">
@@ -58,13 +60,24 @@
 
             <div class="form-group">
                 <label for="parkingLotId">Parking Lot</label>
-                <select id="parkingLotId" th:field="*{parkingLotId}">
+
+                <select id="parkingLotId"
+                        th:field="*{parkingLotId}"
+                        th:disabled="${!pendingPayment}">
                     <option value="">Select parking lot</option>
+
                     <option th:each="p : ${parkingLots}"
                             th:value="${p.id}"
-                            th:text="${p.name + ' - ' + p.parkingType}">
+                            th:text="${p.name}"
+                            th:data-daily-price="${p.dailyPrice}"
+                            th:data-monthly-price="${p.monthlyPrice}"
+                            th:data-yearly-price="${p.yearlyPrice}">
                     </option>
                 </select>
+
+                <input th:if="${!pendingPayment}"
+                       type="hidden"
+                       th:field="*{parkingLotId}">
 
                 <div class="error"
                      th:if="${#fields.hasErrors('parkingLotId')}"
@@ -74,8 +87,10 @@
 
             <div class="form-group">
                 <label for="parkingSpotId">Parking Spot</label>
-                <select id="parkingSpotId" th:field="*{parkingSpotId}">
+
+                <select id="parkingSpotId" th:field="*{parkingSpotId}" required>
                     <option value="">Select parking spot</option>
+
                     <option th:each="s : ${parkingSpots}"
                             th:value="${s.id}"
                             th:attr="data-parking-lot-id=${s.parkingLot.id}"
@@ -93,17 +108,19 @@
 
             <div class="form-group">
                 <label for="reservationType">Reservation Type</label>
+
                 <select id="reservationType"
                         th:field="*{reservationType}"
-                        th:disabled="${reservationStarted}">
-                    <option value="">Select type</option>
+                        th:disabled="${!pendingPayment}">
+                    <option value="">Select reservation type</option>
+
                     <option th:each="type : ${T(bg.softuni.parkzone.model.entities.reservation.ReservationType).values()}"
                             th:value="${type}"
                             th:text="${type}">
                     </option>
                 </select>
 
-                <input th:if="${reservationStarted}"
+                <input th:if="${!pendingPayment}"
                        type="hidden"
                        th:field="*{reservationType}">
 
@@ -115,10 +132,12 @@
 
             <div class="form-group">
                 <label for="startDate">Start Date</label>
+
                 <input id="startDate"
                        type="datetime-local"
                        th:field="*{startDate}"
-                       th:readonly="${reservationStarted}">
+                       th:readonly="${!pendingPayment}"
+                       required>
 
                 <div class="error"
                      th:if="${#fields.hasErrors('startDate')}"
@@ -128,14 +147,25 @@
 
             <div class="form-group">
                 <label for="endDate">End Date</label>
+
                 <input id="endDate"
                        type="datetime-local"
                        th:field="*{endDate}"
-                       th:readonly="${reservationStarted}">
+                       th:readonly="${!pendingPayment}"
+                       required>
 
                 <div class="error"
                      th:if="${#fields.hasErrors('endDate')}"
                      th:errors="*{endDate}">
+                </div>
+            </div>
+
+            <div class="price-preview"
+                 id="pricePreview"
+                 th:if="${pendingPayment}">
+                <div>
+                    <span class="price-preview-label">Total price</span>
+                    <strong id="pricePreviewAmount">Select parking lot and reservation type</strong>
                 </div>
             </div>
 
@@ -148,7 +178,69 @@
     </div>
 
 </div>
+
 <script src="/js/reservation-date.js"></script>
 <script src="/js/reservation-spot-filter.js"></script>
+
+<script>
+    const parkingLotSelect = document.querySelector('[name="parkingLotId"]');
+    const reservationTypeSelect = document.querySelector('[name="reservationType"]');
+    const startDateInput = document.querySelector('[name="startDate"]');
+    const endDateInput = document.querySelector('[name="endDate"]');
+    const pricePreviewAmount = document.getElementById('pricePreviewAmount');
+
+    if (pricePreviewAmount) {
+        function updatePricePreview() {
+            const selectedParkingLot = parkingLotSelect.options[parkingLotSelect.selectedIndex];
+            const reservationType = reservationTypeSelect.value;
+
+            if (!selectedParkingLot || !selectedParkingLot.value || !reservationType) {
+                pricePreviewAmount.textContent = 'Select parking lot and reservation type';
+                return;
+            }
+
+            let basePrice;
+
+            if (reservationType === 'DAILY') {
+                basePrice = Number(selectedParkingLot.dataset.dailyPrice);
+            } else if (reservationType === 'MONTHLY') {
+                basePrice = Number(selectedParkingLot.dataset.monthlyPrice);
+            } else if (reservationType === 'YEARLY') {
+                basePrice = Number(selectedParkingLot.dataset.yearlyPrice);
+            }
+
+            if (!basePrice) {
+                pricePreviewAmount.textContent = 'Price unavailable';
+                return;
+            }
+
+            let totalPrice = basePrice;
+
+            if (reservationType === 'DAILY') {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+
+                if (startDateInput.value && endDateInput.value && endDate > startDate) {
+                    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+                    const days = Math.ceil((endDate - startDate) / millisecondsPerDay);
+
+                    totalPrice = basePrice * days;
+                }
+            }
+
+            pricePreviewAmount.textContent = totalPrice.toFixed(2) + ' EUR';
+        }
+
+        parkingLotSelect.addEventListener('change', updatePricePreview);
+        reservationTypeSelect.addEventListener('change', updatePricePreview);
+        startDateInput.addEventListener('change', updatePricePreview);
+        endDateInput.addEventListener('change', updatePricePreview);
+        startDateInput.addEventListener('input', updatePricePreview);
+        endDateInput.addEventListener('input', updatePricePreview);
+
+        updatePricePreview();
+    }
+</script>
+
 </body>
 </html>
