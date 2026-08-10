@@ -23,7 +23,9 @@
     <div class="card">
         <h2 th:text="${parkingLot.name + ' - Parking Spots'}"></h2>
 
-        <a href="/admin/parking-lots" class="btn-secondary">Back to parking lots</a>
+        <a href="/admin/parking-lots" class="btn-back">
+            <span>←</span> Back to Parking Lots
+        </a>
 
         <div class="error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
@@ -54,44 +56,54 @@
                 </td>
 
                 <td>
-                    <form th:action="@{/admin/parking-spots/{id}/make-disabled(id=${s.id})}"
-                          method="post"
-                          class="inline-form">
-                        <input type="hidden"
-                               th:name="${_csrf.parameterName}"
-                               th:value="${_csrf.token}">
-                        <button type="submit" class="btn">Make Disabled</button>
-                    </form>
+                    <div class="spot-actions">
+                        <form th:action="@{/admin/parking-spots/{id}/make-disabled(id=${s.id})}"
+                              method="post"
+                              class="spot-form">
+                            <input type="hidden"
+                                   th:name="${_csrf.parameterName}"
+                                   th:value="${_csrf.token}">
+                            <button type="submit" class="btn-spot btn-spot-primary" title="Mark as disabled parking">
+                                <span>♿</span> Disabled
+                            </button>
+                        </form>
 
-                    <form th:action="@{/admin/parking-spots/{id}/make-electric(id=${s.id})}"
-                          method="post"
-                          class="inline-form">
-                        <input type="hidden"
-                               th:name="${_csrf.parameterName}"
-                               th:value="${_csrf.token}">
-                        <button type="submit" class="btn">Make Electric</button>
-                    </form>
+                        <form th:action="@{/admin/parking-spots/{id}/make-electric(id=${s.id})}"
+                              method="post"
+                              class="spot-form">
+                            <input type="hidden"
+                                   th:name="${_csrf.parameterName}"
+                                   th:value="${_csrf.token}">
+                            <button type="submit" class="btn-spot btn-spot-accent" title="Mark as electric charging">
+                                <span>⚡</span> Electric
+                            </button>
+                        </form>
 
-                    <form th:action="@{/admin/parking-spots/{id}/make-normal(id=${s.id})}"
-                          method="post"
-                          class="inline-form">
-                        <input type="hidden"
-                               th:name="${_csrf.parameterName}"
-                               th:value="${_csrf.token}">
-                        <button type="submit" class="btn-secondary">Make Normal</button>
-                    </form>
+                        <form th:action="@{/admin/parking-spots/{id}/make-normal(id=${s.id})}"
+                              method="post"
+                              class="spot-form">
+                            <input type="hidden"
+                                   th:name="${_csrf.parameterName}"
+                                   th:value="${_csrf.token}">
+                            <button type="submit" class="btn-spot btn-spot-secondary" title="Mark as normal parking">
+                                <span>📍</span> Normal
+                            </button>
+                        </form>
 
-                    <form th:action="@{/admin/parking-spots/{id}/toggle-active(id=${s.id})}"
-                          method="post"
-                          class="inline-form">
-                        <input type="hidden"
-                               th:name="${_csrf.parameterName}"
-                               th:value="${_csrf.token}">
-                        <button type="submit"
-                                th:class="${s.active ? 'btn-danger' : 'btn'}"
-                                th:text="${s.active ? 'Deactivate' : 'Activate'}">
-                        </button>
-                    </form>
+                        <form th:action="@{/admin/parking-spots/{id}/toggle-active(id=${s.id})}"
+                              method="post"
+                              class="spot-form">
+                            <input type="hidden"
+                                   th:name="${_csrf.parameterName}"
+                                   th:value="${_csrf.token}">
+                            <button type="submit"
+                                    th:class="${s.active ? 'btn-spot btn-spot-danger' : 'btn-spot btn-spot-success'}"
+                                    th:title="${s.active ? 'Deactivate this spot' : 'Activate this spot'}">
+                                <span th:text="${s.active ? '❌' : '✓'}"></span>
+                                <span th:text="${s.active ? 'Deactivate' : 'Activate'}"></span>
+                            </button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             </tbody>

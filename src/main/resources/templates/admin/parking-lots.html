@@ -51,8 +51,10 @@
                 <td th:text="${p.monthlyPrice + ' EUR'}"></td>
                 <td th:text="${p.yearlyPrice + ' EUR'}"></td>
                 <td>
-                    <a th:href="@{/admin/parking-lots/{id}/spots(id=${p.id})}">
-                        Manage spots
+                    <a th:href="@{/admin/parking-lots/{id}/spots(id=${p.id})}"
+                       class="btn-spot btn-spot-manage"
+                       title="Manage parking spots for this lot">
+                        <span>⚙️</span> Manage
                     </a>
                 </td>
             </tr>

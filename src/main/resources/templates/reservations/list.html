@@ -110,15 +110,19 @@
 
                             <div>
                                 <a th:if="${r.status.name() == 'PENDING_PAYMENT' && view.invoiceStatus == 'PENDING'}"
-                                   th:href="@{/payments/reservation/{id}(id=${r.id})}">
-                                    Pay
+                                   th:href="@{/payments/reservation/{id}(id=${r.id})}"
+                                   class="btn-spot btn-spot-success"
+                                   title="Proceed to payment">
+                                    <span>💳</span> Pay
                                 </a>
                             </div>
 
                             <div>
                                 <a th:if="${r.status.name() == 'ACTIVE' || r.status.name() == 'PENDING_PAYMENT'}"
-                                   th:href="@{/reservations/edit/{id}(id=${r.id})}">
-                                    Edit
+                                   th:href="@{/reservations/edit/{id}(id=${r.id})}"
+                                   class="btn-spot btn-spot-edit"
+                                   title="Edit this reservation">
+                                    <span>✏️</span> Edit
                                 </a>
                             </div>
 
@@ -133,9 +137,10 @@
                                            th:value="${_csrf.token}">
 
                                     <button type="submit"
-                                            class="link-button"
-                                            onclick="return confirm('Are you sure you want to cancel this reservation?')">
-                                        Cancel
+                                            class="btn-spot btn-spot-cancel"
+                                            onclick="return confirm('Are you sure you want to cancel this reservation?')"
+                                            title="Cancel this reservation">
+                                        <span>❌</span> Cancel
                                     </button>
                                 </form>
                             </div>
