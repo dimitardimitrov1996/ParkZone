@@ -178,7 +178,7 @@ ParkZone communicates with ParkZoneBillingService through OpenFeign.
 Billing service base URL example:
 
 ```properties
-billing.service.base-url=http://localhost:8081/api/v1/invoices
+billing.service.base.url=http://localhost:8081/api/v1/invoices
 ```
 
 The billing service is protected with an API key. ParkZone sends the API key with every billing request using this header:
@@ -322,7 +322,7 @@ The billing microservice must use the same billing API key.
 Example:
 
 ```properties
-billing.service.api-key=${BILLING_API_KEY}
+billing.service.api.key=${BILLING_API_KEY}
 ```
 
 ## Running the Project
