@@ -6,7 +6,6 @@ import bg.softuni.parkzone.model.dto.vehicle.VehicleCreateRequestDTO;
 import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
-import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.EngineType;
@@ -15,6 +14,7 @@ import bg.softuni.parkzone.model.entities.vehicle.VehicleType;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
+import bg.softuni.parkzone.service.reservation.ReservationService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,11 +28,13 @@ public class VehicleService {
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservationService reservationService;
 
-    public VehicleService(VehicleRepository vehicleRepository, UserRepository userRepository, ReservationRepository reservationRepository) {
+    public VehicleService(VehicleRepository vehicleRepository, UserRepository userRepository, ReservationRepository reservationRepository, ReservationService reservationService) {
         this.vehicleRepository = vehicleRepository;
         this.userRepository = userRepository;
         this.reservationRepository = reservationRepository;
+        this.reservationService = reservationService;
     }
 
     public void createVehicle(@Valid VehicleCreateRequestDTO vehicleCreateRequestDTO, UUID id) {
@@ -163,10 +165,8 @@ public class VehicleService {
                 .findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING);
 
         for (Reservation reservation : activeReservations) {
-            reservation.setStatus(ReservationStatus.CANCELLED);
+            reservationService.cancelReservationByUser(reservation.getId(), userId);
         }
-
-        reservationRepository.saveAll(activeReservations);
 
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);
@@ -191,10 +191,8 @@ public class VehicleService {
                 .findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING);
 
         for (Reservation reservation : activeReservations) {
-            reservation.setStatus(ReservationStatus.CANCELLED);
+            reservationService.cancelReservationByAdmin(reservation.getId());
         }
-
-        reservationRepository.saveAll(activeReservations);
 
         vehicle.setActive(false);
         vehicleRepository.save(vehicle);

@@ -13,6 +13,7 @@ import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
+import bg.softuni.parkzone.service.reservation.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +43,9 @@ class UserServiceTest {
 
     @Mock
     private ReservationRepository reservationRepository;
+
+    @Mock
+    private ReservationService reservationService;
 
     @InjectMocks
     private UserService userService;
@@ -180,20 +184,25 @@ class UserServiceTest {
 
     @Test
     void toggleUserStatus_whenUserIsActive_shouldDeactivateUserVehiclesAndReservations() {
+        UUID reservationId = UUID.randomUUID();
+
         Vehicle vehicle = Vehicle.builder()
                 .active(true)
                 .owner(user)
                 .build();
 
         Reservation reservation = Reservation.builder()
+                .id(reservationId)
                 .status(ReservationStatus.ACTIVE)
                 .user(user)
                 .build();
 
         when(userRepository.findById(userId))
                 .thenReturn(Optional.of(user));
+
         when(vehicleRepository.findAllByOwnerId(userId))
                 .thenReturn(List.of(vehicle));
+
         when(reservationRepository.findAllByUserIdAndStatusIn(userId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
@@ -201,10 +210,10 @@ class UserServiceTest {
 
         assertFalse(user.isActive());
         assertFalse(vehicle.isActive());
-        assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
 
         verify(vehicleRepository).saveAll(List.of(vehicle));
-        verify(reservationRepository).saveAll(List.of(reservation));
+        verify(reservationService).cancelReservationByAdmin(reservationId);
+        verify(reservationRepository, never()).saveAll(anyList());
         verify(userRepository).save(user);
     }
 

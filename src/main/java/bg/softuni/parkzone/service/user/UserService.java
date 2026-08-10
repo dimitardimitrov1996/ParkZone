@@ -5,7 +5,6 @@ import bg.softuni.parkzone.model.dto.user.UserDTO;
 import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
-import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
@@ -13,6 +12,7 @@ import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
+import bg.softuni.parkzone.service.reservation.ReservationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,12 +28,14 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final VehicleRepository vehicleRepository;
     private final ReservationRepository reservationRepository;
+    private final ReservationService reservationService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, VehicleRepository vehicleRepository, ReservationRepository reservationRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, VehicleRepository vehicleRepository, ReservationRepository reservationRepository, ReservationService reservationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.vehicleRepository = vehicleRepository;
         this.reservationRepository = reservationRepository;
+        this.reservationService = reservationService;
     }
 
 
@@ -116,10 +118,8 @@ public class UserService {
                     .findAllByUserIdAndStatusIn(userId, ReservationStatuses.BLOCKING);
 
             for (Reservation reservation : activeReservations) {
-                reservation.setStatus(ReservationStatus.CANCELLED);
+                reservationService.cancelReservationByAdmin(reservation.getId());
             }
-
-            reservationRepository.saveAll(activeReservations);
 
         } else {
             user.setActive(true);

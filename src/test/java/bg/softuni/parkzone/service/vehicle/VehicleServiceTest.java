@@ -17,6 +17,7 @@ import bg.softuni.parkzone.model.entities.vehicle.VehicleType;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import bg.softuni.parkzone.repository.user.UserRepository;
 import bg.softuni.parkzone.repository.vehicle.VehicleRepository;
+import bg.softuni.parkzone.service.reservation.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +45,9 @@ class VehicleServiceTest {
 
     @Mock
     private ReservationRepository reservationRepository;
+
+    @Mock
+    private ReservationService reservationService;
 
     @InjectMocks
     private VehicleService vehicleService;
@@ -303,21 +307,25 @@ class VehicleServiceTest {
 
     @Test
     void deleteVehicle_whenVehicleBelongsToUser_shouldDeactivateVehicleAndCancelActiveReservations() {
+        UUID reservationId = UUID.randomUUID();
+
         Reservation reservation = Reservation.builder()
+                .id(reservationId)
                 .status(ReservationStatus.ACTIVE)
                 .build();
 
         when(vehicleRepository.findById(vehicleId))
                 .thenReturn(Optional.of(vehicle));
+
         when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         vehicleService.deleteVehicle(vehicleId, userId);
 
         assertFalse(vehicle.isActive());
-        assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
 
-        verify(reservationRepository).saveAll(List.of(reservation));
+        verify(reservationService).cancelReservationByUser(reservationId, userId);
+        verify(reservationRepository, never()).saveAll(anyList());
         verify(vehicleRepository).save(vehicle);
     }
 
@@ -358,21 +366,25 @@ class VehicleServiceTest {
 
     @Test
     void deleteVehicleByAdmin_whenVehicleIsActive_shouldDeactivateVehicleAndCancelActiveReservations() {
+        UUID reservationId = UUID.randomUUID();
+
         Reservation reservation = Reservation.builder()
+                .id(reservationId)
                 .status(ReservationStatus.ACTIVE)
                 .build();
 
         when(vehicleRepository.findById(vehicleId))
                 .thenReturn(Optional.of(vehicle));
+
         when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         vehicleService.deleteVehicleByAdmin(vehicleId);
 
         assertFalse(vehicle.isActive());
-        assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
 
-        verify(reservationRepository).saveAll(List.of(reservation));
+        verify(reservationService).cancelReservationByAdmin(reservationId);
+        verify(reservationRepository, never()).saveAll(anyList());
         verify(vehicleRepository).save(vehicle);
     }
 
