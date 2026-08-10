@@ -700,7 +700,7 @@ class ReservationServiceTest {
                 .status("PENDING")
                 .build();
 
-        when(reservationRepository.findAllByUserId(userId))
+        when(reservationRepository.findAllByUserIdOrderByCreatedOnDesc(userId))
                 .thenReturn(List.of(reservation));
 
         when(billingClient.getInvoiceByReservationId(reservation.getId()))
@@ -719,7 +719,7 @@ class ReservationServiceTest {
     void getReservationViewsByUserId_whenBillingServiceFails_shouldReturnUnavailableInvoiceStatus() {
         Reservation reservation = createReservation(ReservationStatus.PENDING_PAYMENT);
 
-        when(reservationRepository.findAllByUserId(userId))
+        when(reservationRepository.findAllByUserIdOrderByCreatedOnDesc(userId))
                 .thenReturn(List.of(reservation));
 
         when(billingClient.getInvoiceByReservationId(reservation.getId()))

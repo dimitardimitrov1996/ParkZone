@@ -55,11 +55,6 @@ public class ReservationService {
         this.billingClient = billingClient;
     }
 
-
-    public List<Reservation> getReservationsByUserId(UUID userId) {
-        return reservationRepository.findAllByUserId(userId);
-    }
-
     @Transactional
     public void createReservation(ReservationCreateRequestDTO dto, UUID userId) {
 
@@ -245,7 +240,7 @@ public class ReservationService {
     }
 
     public List<Reservation> getAllReservations() {
-        return reservationRepository.findAll();
+        return reservationRepository.findAllByOrderByCreatedOnDesc();
     }
 
     @Transactional
@@ -487,7 +482,7 @@ public class ReservationService {
 
     public List<ReservationViewDTO> getReservationViewsByUserId(UUID userId) {
 
-        return reservationRepository.findAllByUserId(userId)
+        return reservationRepository.findAllByUserIdOrderByCreatedOnDesc(userId)
                 .stream()
                 .map(reservation -> {
                     try {

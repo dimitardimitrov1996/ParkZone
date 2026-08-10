@@ -2,7 +2,6 @@ package bg.softuni.parkzone.repository.reservation;
 
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
-import bg.softuni.parkzone.model.entities.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
@@ -12,9 +11,9 @@ import java.util.UUID;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
 
-    List<Reservation> findAllByUser(User user);
+    List<Reservation> findAllByUserIdOrderByCreatedOnDesc(UUID userId);
 
-    List<Reservation> findAllByUserId(UUID userId);
+    List<Reservation> findAllByOrderByCreatedOnDesc();
 
     boolean existsByParkingSpotIdAndStatusInAndStartDateBeforeAndEndDateAfter(
             UUID parkingSpotId,
