@@ -6,6 +6,7 @@ import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
@@ -112,7 +113,7 @@ public class UserService {
             vehicleRepository.saveAll(userVehicles);
 
             List<Reservation> activeReservations = reservationRepository
-                    .findAllByUserIdAndStatus(userId, ReservationStatus.ACTIVE);
+                    .findAllByUserIdAndStatusIn(userId, ReservationStatuses.BLOCKING);
 
             for (Reservation reservation : activeReservations) {
                 reservation.setStatus(ReservationStatus.CANCELLED);

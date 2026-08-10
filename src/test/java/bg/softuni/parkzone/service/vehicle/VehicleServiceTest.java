@@ -9,6 +9,7 @@ import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.EngineType;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
@@ -204,7 +205,7 @@ class VehicleServiceTest {
                 .thenReturn(Optional.of(vehicle));
         when(vehicleRepository.existsByRegistrationNumberAndIdNot(editDTO.getRegistrationNumber(), vehicleId))
                 .thenReturn(false);
-        when(reservationRepository.findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE))
+        when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of());
 
         vehicleService.editVehicle(editDTO, vehicleId, userId);
@@ -253,7 +254,7 @@ class VehicleServiceTest {
                 .thenReturn(Optional.of(vehicle));
         when(vehicleRepository.existsByRegistrationNumberAndIdNot(editDTO.getRegistrationNumber(), vehicleId))
                 .thenReturn(false);
-        when(reservationRepository.findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE))
+        when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         assertThrows(BusinessRuleException.class,
@@ -272,7 +273,7 @@ class VehicleServiceTest {
                 .thenReturn(Optional.of(vehicle));
         when(vehicleRepository.existsByRegistrationNumberAndIdNot(editDTO.getRegistrationNumber(), vehicleId))
                 .thenReturn(false);
-        when(reservationRepository.findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE))
+        when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         assertThrows(BusinessRuleException.class,
@@ -291,7 +292,7 @@ class VehicleServiceTest {
                 .thenReturn(Optional.of(vehicle));
         when(vehicleRepository.existsByRegistrationNumberAndIdNot(editDTO.getRegistrationNumber(), vehicleId))
                 .thenReturn(false);
-        when(reservationRepository.findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE))
+        when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         assertThrows(BusinessRuleException.class,
@@ -308,7 +309,7 @@ class VehicleServiceTest {
 
         when(vehicleRepository.findById(vehicleId))
                 .thenReturn(Optional.of(vehicle));
-        when(reservationRepository.findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE))
+        when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         vehicleService.deleteVehicle(vehicleId, userId);
@@ -363,7 +364,7 @@ class VehicleServiceTest {
 
         when(vehicleRepository.findById(vehicleId))
                 .thenReturn(Optional.of(vehicle));
-        when(reservationRepository.findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE))
+        when(reservationRepository.findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         vehicleService.deleteVehicleByAdmin(vehicleId);

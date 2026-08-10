@@ -6,6 +6,7 @@ import bg.softuni.parkzone.model.dto.user.UserProfileUpdateRequestDTO;
 import bg.softuni.parkzone.model.dto.user.UserRegisterRequestDTO;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
@@ -193,7 +194,7 @@ class UserServiceTest {
                 .thenReturn(Optional.of(user));
         when(vehicleRepository.findAllByOwnerId(userId))
                 .thenReturn(List.of(vehicle));
-        when(reservationRepository.findAllByUserIdAndStatus(userId, ReservationStatus.ACTIVE))
+        when(reservationRepository.findAllByUserIdAndStatusIn(userId, ReservationStatuses.BLOCKING))
                 .thenReturn(List.of(reservation));
 
         userService.toggleUserStatus(userId, adminId);

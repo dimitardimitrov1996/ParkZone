@@ -31,11 +31,21 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
             LocalDateTime startDate
     );
 
-    List<Reservation> findAllByUserIdAndStatus(UUID userId, ReservationStatus status);
+    List<Reservation> findAllByUserIdAndStatusIn(
+            UUID userId,
+            List<ReservationStatus> statuses
+    );
 
-    boolean existsByParkingSpotIdAndStatus(UUID parkingSpotId, ReservationStatus status);
+    boolean existsByParkingSpotIdAndStatusIn(
+            UUID parkingSpotId,
+            List<ReservationStatus> statuses
+    );
 
-    List<Reservation> findAllByVehicleIdAndStatus(UUID vehicleId, ReservationStatus status);
+    List<Reservation> findAllByVehicleIdAndStatusIn(
+            UUID vehicleId,
+            List<ReservationStatus> statuses
+    );
+
 
     boolean existsByParkingSpotIdAndStatusInAndIdNotAndStartDateBeforeAndEndDateAfter(
             UUID parkingSpotId,

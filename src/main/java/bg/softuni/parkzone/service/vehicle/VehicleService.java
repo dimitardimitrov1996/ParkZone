@@ -7,6 +7,7 @@ import bg.softuni.parkzone.model.dto.vehicle.VehicleEditDTO;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingType;
 import bg.softuni.parkzone.model.entities.reservation.Reservation;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.model.entities.user.User;
 import bg.softuni.parkzone.model.entities.vehicle.EngineType;
 import bg.softuni.parkzone.model.entities.vehicle.Vehicle;
@@ -86,7 +87,7 @@ public class VehicleService {
         }
 
         List<Reservation> activeReservations = reservationRepository
-                .findAllByVehicleIdAndStatus(id, ReservationStatus.ACTIVE);
+                .findAllByVehicleIdAndStatusIn(id, ReservationStatuses.BLOCKING);
 
         boolean hasActiveChargingReservation = activeReservations.stream()
                 .anyMatch(reservation -> reservation.getParkingSpot().isElectricChargingSpot());
@@ -160,7 +161,7 @@ public class VehicleService {
         }
 
         List<Reservation> activeReservations = reservationRepository
-                .findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE);
+                .findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING);
 
         for (Reservation reservation : activeReservations) {
             reservation.setStatus(ReservationStatus.CANCELLED);
@@ -188,7 +189,7 @@ public class VehicleService {
         }
 
         List<Reservation> activeReservations = reservationRepository
-                .findAllByVehicleIdAndStatus(vehicleId, ReservationStatus.ACTIVE);
+                .findAllByVehicleIdAndStatusIn(vehicleId, ReservationStatuses.BLOCKING);
 
         for (Reservation reservation : activeReservations) {
             reservation.setStatus(ReservationStatus.CANCELLED);

@@ -4,6 +4,7 @@ import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
+import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
 import bg.softuni.parkzone.repository.parkingspot.ParkingSpotRepository;
 import bg.softuni.parkzone.repository.reservation.ReservationRepository;
@@ -103,7 +104,7 @@ public class ParkingSpotService {
 
     private void validateSpotCanBeChanged(ParkingSpot parkingSpot) {
         boolean hasActiveReservation = reservationRepository
-                .existsByParkingSpotIdAndStatus(parkingSpot.getId(), ReservationStatus.ACTIVE);
+                .existsByParkingSpotIdAndStatusIn(parkingSpot.getId(), ReservationStatuses.BLOCKING);
 
         if (hasActiveReservation) {
             throw new BusinessRuleException("This parking spot has an active reservation and cannot be changed");
