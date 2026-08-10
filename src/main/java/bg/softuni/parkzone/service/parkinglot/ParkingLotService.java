@@ -22,11 +22,6 @@ public class ParkingLotService {
         return parkingLotRepository.findAll();
     }
 
-    public ParkingLot getById(UUID id) {
-        return parkingLotRepository.findById(id)
-                .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
-    }
-
     public ParkingLot getParkingLotById(UUID id) {
         return parkingLotRepository.findById(id)
                 .orElseThrow(() -> new BusinessRuleException("Parking lot not found"));
