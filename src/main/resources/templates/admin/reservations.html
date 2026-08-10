@@ -80,7 +80,7 @@
                     <td th:text="${r.totalPrice + ' EUR'}"></td>
 
                     <td>
-                        <form th:if="${r.status.name() == 'ACTIVE'}"
+                        <form th:if="${r.status.name() == 'ACTIVE' || r.status.name() == 'PENDING_PAYMENT'}"
                               th:action="@{/admin/reservations/cancel/{id}(id=${r.id})}"
                               method="post"
                               class="inline-form">
