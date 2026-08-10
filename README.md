@@ -1,397 +1,418 @@
 # ParkZone
 
-ParkZone is a Spring MVC web application for managing parking vehicles, parking spots, and parking reservations. The application supports regular users and administrators, includes session-based authentication, and applies business rules for vehicle ownership, parking spot availability, reservation periods, and user status management.
+ParkZone is a Spring Boot parking management system that allows users to manage vehicles, create parking reservations, pay reservation invoices, and track their reservation history.
 
-This project was developed as an individual project for the SoftUni Spring Fundamentals course, May 2026.
+The system is built as two separate Spring Boot applications:
+
+- Main application: [ParkZone](https://github.com/dimitardimitrov1996/ParkZone)
+- Billing microservice: [ParkZoneBillingService](https://github.com/dimitardimitrov1996/ParkZoneBillingService)
+
+The main application provides the web interface, user management, reservation logic, vehicle management, administration panel, scheduling, validation, and security. The billing microservice is responsible for invoice creation, invoice updates, payments, cancellations, and refund status handling.
 
 ## Tech Stack
 
-* Java 21
-* Spring Boot 3.4.0
-* Spring MVC
-* Thymeleaf
-* Spring Data JPA
-* Hibernate
-* MySQL
-* Maven
-* Jakarta Bean Validation
-* Lombok
-* BCrypt password hashing through Spring Security Crypto
-* HTML, CSS, JavaScript
-
-## Application Roles
-
-The application has three access levels:
-
-* Guest
-
-    * Can access the landing page, register page, and login page.
-* User
-
-    * Can manage profile data.
-    * Can create, edit, and delete personal vehicles.
-    * Can create, edit, and cancel reservations.
-    * Can view reservation history.
-* Admin
-
-    * Can access the admin dashboard.
-    * Can manage users.
-    * Can manage parking spots.
-    * Can manage vehicles.
-    * Can cancel reservations.
-
-## Main Domain Entities
-
-### User
-
-Represents an application user. A user can be either a regular user or an administrator.
-
-Main fields:
-
-* UUID id
-* username
-* email
-* password
-* firstName
-* lastName
-* phoneNumber
-* role
-* active status
+- Java 21
+- Spring Boot 3.4.0
+- Spring MVC
+- Spring Security
+- Spring Data JPA
+- Hibernate
+- Thymeleaf
+- MySQL
+- H2 Database for tests
+- OpenFeign
+- Maven
+- Lombok
+- JUnit 5
+- Mockito
+- MockMvc
 
-### Vehicle
+## Application Overview
 
-Represents a vehicle owned by a user.
+ParkZone supports two user roles:
 
-Main fields:
-
-* UUID id
-* registrationNumber
-* brand
-* model
-* vehicleType
-* engineType
-* disabledParkingRequired
-* owner
-* active status
+- `USER`
+- `ADMIN`
 
-### ParkingLot
+Regular users can register, log in, manage their profile, add vehicles, create reservations, pay invoices, and view their reservation history.
 
-Represents a parking lot in the system.
+Administrators can manage users, roles, vehicles, reservations, parking lots, and parking spots through a dedicated admin panel.
 
-Main fields:
+## Main Features
 
-* UUID id
-* name
-* parkingType
-* capacity
-* disabledParkingSpots
-* electricChargingSpots
-* dailyPrice
-* monthlyPrice
-* yearlyPrice
-
-### ParkingSpot
-
-Represents a specific parking spot inside a parking lot.
-
-Main fields:
-
-* UUID id
-* spotNumber
-* disabledSpot
-* electricChargingSpot
-* active status
-* parkingLot
-
-### Reservation
-
-Represents a parking reservation made by a user.
-
-Main fields:
-
-* UUID id
-* user
-* vehicle
-* parkingLot
-* parkingSpot
-* reservationType
-* reservationStatus
-* startDate
-* endDate
-* totalPrice
-* createdOn
-* disabledParkingSpotRequired
-* electricChargingRequired
+### User Features
 
-## Main Functionalities
+- User registration
+- Login and logout
+- Profile view and profile update
+- Vehicle creation, editing, and deletion
+- Reservation creation
+- Reservation editing according to reservation status
+- Reservation cancellation
+- Invoice payment
+- Reservation history
 
-### Authentication and Access Control
+### Admin Features
 
-* User registration with server-side validation.
-* User login with session-based authentication.
-* Passwords are stored hashed with BCrypt.
-* The authenticated user's id is stored in the HTTP session.
-* Guests can access only public pages.
-* Logged users can access user pages.
-* Admin pages are protected with role checks.
-* Inactive users are automatically redirected to login.
+- Admin dashboard
+- View all users
+- Activate and deactivate users
+- Change user roles
+- Prevent admins from changing their own role
+- View all vehicles
+- Delete and reactivate vehicles
+- View all reservations
+- Cancel active or pending reservations
+- View parking lots
+- Manage parking spots
+- Change parking spot type
+- Activate and deactivate parking spots
 
-### User Profile Management
+### Billing Features
 
-Users can update their personal profile information:
+The billing functionality is handled by the separate billing microservice.
 
-* first name
-* last name
-* phone number
+Supported invoice operations:
 
-Username and email are displayed in the profile page but are not edited from there.
+- Create invoice
+- Get invoice by reservation ID
+- Update pending invoice
+- Pay invoice
+- Cancel invoice
+- Mark paid cancelled invoice as refunded
 
-### Vehicle Management
+Billing microservice repository:
 
-Users can:
+[ParkZoneBillingService](https://github.com/dimitardimitrov1996/ParkZoneBillingService)
 
-* create vehicles
-* view their active vehicles
-* edit their vehicles
-* delete vehicles
+## Reservation Rules
 
-Vehicle rules:
+ParkZone contains business rules for safe and consistent reservation management.
 
-* Registration numbers must be unique.
-* A user can edit or delete only vehicles owned by that user.
-* Deleting a vehicle performs a soft delete by setting the vehicle as inactive.
-* Deleting a vehicle cancels all active reservations for that vehicle.
-* If a vehicle has an active reservation for an electric charging spot, the engine type cannot be changed from electric to another type.
-* If a vehicle has an active reservation for a disabled spot, the disabled parking requirement cannot be removed.
-* If a vehicle has an active indoor reservation, it cannot be changed to VAN.
+A user can create a reservation only when:
 
-### Reservation Management
+- The selected vehicle belongs to the user
+- The selected vehicle is active
+- The selected parking spot is active
+- The parking spot belongs to the selected parking lot
+- The vehicle does not already have an overlapping active or pending reservation
+- The parking spot does not already have an overlapping active or pending reservation
 
-Users can:
+Additional rules:
 
-* create reservations
-* view reservation history
-* edit active reservations
-* cancel active reservations
+- Vans cannot reserve indoor parking spots.
+- Only electric vehicles can reserve electric charging spots.
+- Disabled parking spots can be reserved only by vehicles marked as requiring disabled parking.
+- Daily reservations must be at least one full day.
+- Monthly reservations must be exactly one full month.
+- Yearly reservations must be exactly one full year.
 
-Reservation rules:
+## Reservation Editing Rules
 
-* A user can manage only their own reservations.
-* Only active reservations can be edited or cancelled.
-* A vehicle must be active to be used in a reservation.
-* A parking spot must be active to be reserved.
-* The selected parking spot must belong to the selected parking lot.
-* Vans cannot reserve indoor parking spots.
-* Only electric vehicles can reserve electric charging spots.
-* Only vehicles marked as requiring disabled parking can reserve disabled parking spots.
-* A parking spot cannot be reserved if it is already taken for the selected period.
-* A vehicle cannot have another active reservation for the same period.
-* Daily reservations must be at least one full day.
-* Daily reservations are priced by number of reserved days.
-* Monthly reservations must be exactly one full month.
-* Yearly reservations must be exactly one full year.
-* Expired active reservations are automatically marked as completed.
-* Completed reservations are kept in the reservation history and do not block future reservations.
-* Started reservations can still be edited, but only the vehicle, parking lot, and parking spot can be changed. Dates and reservation type cannot be changed after the reservation has started.
+Reservation editing depends on the reservation status.
 
-### Admin User Management
+### Pending Payment Reservations
 
-Admins can:
+Pending payment reservations can be fully edited.
 
-* view all users
-* activate or deactivate users
+The user can change:
 
-Admin user rules:
+- Vehicle
+- Parking lot
+- Parking spot
+- Reservation type
+- Start date
+- End date
 
-* An admin cannot deactivate their own admin account.
-* When a user is deactivated, all user vehicles become inactive.
-* When a user is deactivated, all active user reservations are cancelled.
-* When a user is reactivated, their vehicles become active again.
-* Cancelled reservations remain cancelled and are not automatically restored.
+When a pending payment reservation is edited, ParkZone recalculates the price and updates the existing invoice in the billing microservice.
 
-### Admin Vehicle Management
+### Active Reservations Before Start Time
 
-Admins can:
+Paid active reservations can be edited only before their start time.
 
-* view all vehicles
-* deactivate vehicles
-* reactivate vehicles
+The user can change:
 
-Admin vehicle rules:
+- Vehicle
+- Parking spot in the same parking lot
 
-* Deactivating a vehicle cancels all active reservations for that vehicle.
-* A vehicle cannot be activated if its owner is inactive.
-* Reactivating a vehicle does not restore cancelled reservations.
+The user cannot change:
 
-### Admin Reservation Management
+- Parking lot
+- Reservation type
+- Start date
+- End date
 
-Admins can:
+This prevents price mismatches after the invoice has already been paid.
 
-* view all reservations
-* cancel active reservations
+### Started Reservations
 
-Only active reservations can be cancelled.
+Started active reservations cannot be edited.
 
-### Admin Parking Spot Management
+### Cancelled and Completed Reservations
 
-Admins can:
+Cancelled and completed reservations cannot be edited.
 
-* view parking lots
-* view parking spots by parking lot
-* change a parking spot to normal
-* change a parking spot to disabled
-* change a parking spot to electric charging
-* activate or deactivate parking spots
+## Payment Flow
 
-Parking spot rules:
+When a reservation is created, it starts with status:
 
-* A parking spot with an active reservation cannot be changed or deactivated.
-* Parking lot disabled and electric spot counters are updated when spot types are changed.
+```text
+PENDING_PAYMENT
+```
 
-## Web Pages
+ParkZone sends a request to the billing microservice and creates an invoice.
 
-The application contains the following Thymeleaf pages:
+When the user pays the invoice:
 
-### Public Pages
+1. ParkZone validates the payment form.
+2. ParkZone calls the billing microservice.
+3. The billing microservice marks the invoice as paid.
+4. ParkZone changes the reservation status to `ACTIVE`.
 
-* Landing page
-* Login page
-* Register page
+If a paid reservation is cancelled, the invoice is marked as refunded in the billing microservice.
 
-### User Pages
+## Microservice Communication
 
-* Home page
-* User profile page
-* Vehicle list page
-* Vehicle create page
-* Vehicle edit page
-* Reservation list page
-* Reservation create page
-* Reservation edit page
+ParkZone communicates with ParkZoneBillingService through OpenFeign.
 
-### Admin Pages
+Billing service base URL example:
 
-* Admin dashboard
-* User management page
-* Vehicle management page
-* Reservation management page
-* Parking lot management page
-* Parking spot management page
+```properties
+billing.service.base-url=http://localhost:8081/api/v1/invoices
+```
+
+The billing service is protected with an API key. ParkZone sends the API key with every billing request using this header:
+
+```http
+X-API-Key
+```
+
+Both applications must use the same API key value.
+
+## Security
+
+The application uses Spring Security.
+
+Security features:
+
+- Role-based access control
+- Protected user pages
+- Protected admin pages
+- CSRF protection
+- Password hashing
+- Disabled user login prevention
+- Custom authenticated principal
+- Admin-only access to `/admin/**`
+
+Public pages:
+
+- Home page
+- Login page
+- Register page
+
+Protected user pages:
+
+- Profile
+- Vehicles
+- Reservations
+- Payments
+
+Protected admin pages:
+
+- Admin dashboard
+- User management
+- Vehicle management
+- Reservation management
+- Parking lot management
+- Parking spot management
 
 ## Validation and Error Handling
 
-The project uses server-side validation with Jakarta Bean Validation. Invalid form submissions are returned to the same form with field-specific error messages.
+ParkZone uses both DTO validation and custom business validation.
 
-Examples of validated input:
+Validation examples:
 
-* username length and uniqueness
-* email format and uniqueness
-* password length
-* vehicle registration number
-* vehicle brand and model
-* selected vehicle, parking lot, and parking spot
-* reservation start and end dates
-* reservation type
-* phone number format
+- Required fields
+- Valid email format
+- Valid vehicle registration number format
+- Valid reservation dates
+- Valid reservation period
+- Valid card number
+- Valid card expiration date
+- Valid CVV
+- Valid profile data
 
-Business rule violations are handled in the service layer by throwing a custom BusinessRuleException. The controllers catch these exceptions and return the user back to the form with an appropriate error message.
+The application includes centralized exception handling through `GlobalExceptionHandler`.
 
-BusinessRuleException is used for domain-specific rules such as duplicate vehicle registration numbers, invalid reservation periods, unavailable parking spots, inactive vehicles, invalid parking spot usage, and admin/user status constraints.
+Handled cases include:
 
-## Default Data
+- Business rule violations
+- Application exceptions
+- Validation errors
+- Missing resources
+- Billing service communication problems
 
-The application initializes default data when the database is empty.
+## Scheduling
 
-### Default Admin
+The application includes scheduled reservation maintenance.
 
-* Email: [admin@abv.bg](mailto:admin@abv.bg)
-* Password is set from the application.properties file with the property `app.admin.password`.
+Scheduled jobs:
 
-### Default User
+- Complete expired active reservations
+- Cancel expired pending payment reservations
 
-* Email: [user@abv.bg](mailto:user@abv.bg)
-* Password is set from the application.properties file with the property `app.user.password`.
+This keeps reservation statuses consistent over time.
 
-### Default Parking Lots
+## Caching
 
-Outdoor Parking:
+ParkZone uses caching for frequently accessed parking-related data to reduce unnecessary database calls and improve performance.
 
-* Capacity: 30 spots
-* Disabled spots: 5
-* Electric charging spots: 0
-* Daily price: 5 EUR
-* Monthly price: 120 EUR
-* Yearly price: 1200 EUR
+## Logging
 
-Indoor Parking:
+The main business operations include logging.
 
-* Capacity: 30 spots
-* Disabled spots: 5
-* Electric charging spots: 5
-* Daily price: 10 EUR
-* Monthly price: 240 EUR
-* Yearly price: 2400 EUR
+Logged operations include:
 
-### Default Vehicles
+- User registration
+- Profile update
+- Vehicle creation, update, deletion, and activation
+- Reservation creation
+- Reservation editing
+- Reservation cancellation
+- Expired reservation completion
+- Expired pending payment cancellation
+- Payment processing
+- Billing service communication failures
+- Admin operations
 
-The default user receives several vehicles for testing:
+## Database
 
-* Diesel car
-* Electric car
-* Van
-* Car requiring disabled parking
+ParkZone uses MySQL for development/runtime and H2 for tests.
 
-## Running the Application
-
-### Prerequisites
-
-* Java 21 or compatible Java 17+ version
-* Maven
-* MySQL Server
-
-### Database Configuration
-
-The application uses MySQL. The default configuration is in:
-
-```text
-src/main/resources/application.properties
-```
-
-Default database settings:
+Example MySQL configuration:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/park-zone-application?createDatabaseIfNotExist=true
-spring.datasource.username=//insert-your-username-here//
-spring.datasource.password=//insert-your-password-here//
-spring.jpa.hibernate.ddl-auto=update
+spring.datasource.url=jdbc:mysql://localhost:3306/parkzone?createDatabaseIfNotExist=true
+spring.datasource.username=${DB_USERNAME:root}
+spring.datasource.password=${DB_PASSWORD:1234}
 ```
 
-Before running the application, update the MySQL username and password.
+Example test database configuration:
 
-### Start the Application
+```properties
+spring.datasource.url=jdbc:h2:mem:parkzone_test;MODE=MYSQL
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+spring.jpa.hibernate.ddl-auto=create-drop
+```
 
-From the project root directory, run:
+## Environment Variables
+
+ParkZone supports the following environment variables:
+
+```properties
+DB_USERNAME=root
+DB_PASSWORD=1234
+BILLING_API_KEY=your-api-key
+```
+
+The billing microservice must use the same billing API key.
+
+Example:
+
+```properties
+billing.service.api-key=${BILLING_API_KEY}
+```
+
+## Running the Project
+
+The full system requires both applications to be running.
+
+### 1. Start MySQL
+
+Make sure MySQL is running locally.
+
+### 2. Start ParkZoneBillingService
+
+Billing microservice repository:
+
+[ParkZoneBillingService](https://github.com/dimitardimitrov1996/ParkZoneBillingService)
+
+The billing microservice should run on port `8081`.
+
+### 3. Start ParkZone
+
+Main application repository:
+
+[ParkZone](https://github.com/dimitardimitrov1996/ParkZone)
+
+Run the application with Maven:
 
 ```bash
 mvn spring-boot:run
 ```
 
-Then open:
+Default application URL:
 
 ```text
 http://localhost:8080
 ```
 
-## Security
+## Running Tests
 
-The project uses custom session-based authentication.
+Run all tests with:
 
-* The user id is stored in the HTTP session after successful login.
-* Protected endpoints are checked by a Spring MVC interceptor.
-* Admin endpoints require the ADMIN role.
-* Passwords are hashed with BCrypt.
-* Inactive users cannot access protected pages.
+```bash
+mvn test
+```
+
+The project includes:
+
+- Unit tests
+- Service tests
+- Controller tests
+- MockMvc tests
+- Security-related web tests
+- Billing communication failure tests
+
+The current test coverage is above the required 70% line coverage.
+
+## Project Structure
+
+```text
+src/main/java/bg/softuni/parkzone
+├── config
+├── exception
+├── model
+│   ├── dto
+│   └── entities
+├── repository
+├── scheduler
+├── security
+├── service
+└── web
+```
+
+Layer responsibilities:
+
+- `web` - Spring MVC controllers
+- `service` - business logic
+- `repository` - database access
+- `model.entities` - JPA entities
+- `model.dto` - request and response DTOs
+- `security` - authentication-related classes
+- `config` - application configuration
+- `scheduler` - scheduled tasks
+- `exception` - custom exceptions and global exception handling
+
+## Related Repositories
+
+- Main application: [ParkZone](https://github.com/dimitardimitrov1996/ParkZone)
+- Billing microservice: [ParkZoneBillingService](https://github.com/dimitardimitrov1996/ParkZoneBillingService)
 
 ## Author
 
-Created as an individual project for the SoftUni Spring Fundamentals course, May 2026.
+Dimitar Dimitrov
+
+GitHub: [dimitardimitrov1996](https://github.com/dimitardimitrov1996)
