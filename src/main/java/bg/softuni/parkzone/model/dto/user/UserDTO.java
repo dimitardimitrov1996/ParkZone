@@ -3,7 +3,6 @@ package bg.softuni.parkzone.model.dto.user;
 import bg.softuni.parkzone.model.entities.user.UserRole;
 import lombok.Builder;
 import lombok.Data;
-
 import java.util.UUID;
 
 @Data

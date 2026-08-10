@@ -3,7 +3,6 @@ package bg.softuni.parkzone.model.entities.vehicle;
 import bg.softuni.parkzone.model.entities.user.User;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.util.UUID;
 
 @Builder

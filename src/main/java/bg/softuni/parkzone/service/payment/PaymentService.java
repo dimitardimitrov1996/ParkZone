@@ -13,7 +13,6 @@ import bg.softuni.parkzone.service.billing.client.BillingClient;
 import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.UUID;
 

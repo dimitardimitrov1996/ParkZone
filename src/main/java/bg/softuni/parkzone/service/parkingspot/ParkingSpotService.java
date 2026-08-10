@@ -3,7 +3,6 @@ package bg.softuni.parkzone.service.parkingspot;
 import bg.softuni.parkzone.exception.BusinessRuleException;
 import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.model.entities.parkingspot.ParkingSpot;
-import bg.softuni.parkzone.model.entities.reservation.ReservationStatus;
 import bg.softuni.parkzone.model.entities.reservation.ReservationStatuses;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
 import bg.softuni.parkzone.repository.parkingspot.ParkingSpotRepository;
@@ -11,7 +10,6 @@ import bg.softuni.parkzone.repository.reservation.ReservationRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;

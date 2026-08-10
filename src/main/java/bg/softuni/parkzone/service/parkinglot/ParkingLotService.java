@@ -5,7 +5,6 @@ import bg.softuni.parkzone.model.entities.parkinglot.ParkingLot;
 import bg.softuni.parkzone.repository.parkinglot.ParkingLotRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.UUID;
 
