@@ -292,9 +292,9 @@ ParkZone uses MySQL for development/runtime and H2 for tests.
 Example MySQL configuration:
 
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/parkzone?createDatabaseIfNotExist=true
-spring.datasource.username=${DB_USERNAME:root}
-spring.datasource.password=${DB_PASSWORD:1234}
+spring.datasource.url=jdbc:mysql://localhost:3306/park-zone-application?createDatabaseIfNotExist=true
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
 ```
 
 Example test database configuration:
@@ -314,7 +314,9 @@ ParkZone supports the following environment variables:
 ```properties
 DB_USERNAME=root
 DB_PASSWORD=1234
-BILLING_API_KEY=your-api-key
+APP_USER_PASSWORD=user123
+APP_ADMIN_PASSWORD=admin123
+BILLING_API_KEY=test-api-key
 ```
 
 The billing microservice must use the same billing API key.
